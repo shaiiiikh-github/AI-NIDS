@@ -1,0 +1,7 @@
+#backend
+backend/venv/
+
+
+# Datasets
+datasets/raw/
+datasets/processed/
