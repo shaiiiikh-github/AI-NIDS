@@ -1,75 +1,76 @@
 // src/App.tsx
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Toaster } from 'sonner';
+import { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { DashboardLayout } from './layouts/DashboardLayout';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { DashboardLayout } from '@/layouts/DashboardLayout';
-import { Dashboard } from '@/pages/Dashboard';
-import { Prediction } from '@/pages/Prediction';
-import { Analytics } from '@/pages/Analytics';
-import { ModelInfo } from '@/pages/ModelInfo';
-import { Reports } from '@/pages/Reports';
-import { Settings } from '@/pages/Settings';
-import { About } from '@/pages/About';
+// Lazy load pages
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Prediction = lazy(() => import('./pages/Prediction'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const ModelInfo = lazy(() => import('./pages/ModelInfo'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Settings = lazy(() => import('./pages/Settings'));
+const About = lazy(() => import('./pages/About'));
 
-// A wrapper to animate page changes seamlessly
-const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -10 }}
-    transition={{ duration: 0.2 }}
-    className="h-full"
-  >
-    {children}
-  </motion.div>
-);
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 30_000, retry: 2 } },
+});
 
-const AnimatedRoutes = () => {
-  const location = useLocation();
-
+function App() {
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageWrapper><Dashboard /></PageWrapper>} />
-        <Route path="/predict" element={<PageWrapper><Prediction /></PageWrapper>} />
-        <Route path="/analytics" element={<PageWrapper><Analytics /></PageWrapper>} />
-        <Route path="/model-info" element={<PageWrapper><ModelInfo /></PageWrapper>} />
-        <Route path="/reports" element={<PageWrapper><Reports /></PageWrapper>} />
-        <Route path="/settings" element={<PageWrapper><Settings /></PageWrapper>} />
-        <Route path="/about" element={<PageWrapper><About /></PageWrapper>} />
-        
-        <Route
-          path="*"
-          element={
-            <PageWrapper>
-              <div className="h-full flex items-center justify-center p-8 text-neutral-500 font-mono text-sm">
-                404 // ROUTE_NOT_FOUND
-              </div>
-            </PageWrapper>
-          }
-        />
-      </Routes>
-    </AnimatePresence>
-  );
-};
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ErrorBoundary>
+          <Suspense fallback={<div className="p-8 text-center text-neutral-400">Loading...</div>}>
+            <Routes>
+              {/* Public landing page – no layout */}
+              <Route path="/" element={<LandingPage />} />
 
-export const App: React.FC = () => {
-  return (
-    <Router>
-      <Toaster 
-        theme="dark" 
-        position="top-right" 
-        toastOptions={{
-          className: 'bg-neutral-900 border border-neutral-800 text-neutral-200 font-sans',
-        }}
-      />
-      <DashboardLayout>
-        <AnimatedRoutes />
-      </DashboardLayout>
-    </Router>
+              {/* Authenticated dashboard routes – with layout */}
+              <Route path="/dashboard" element={
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
+              } />
+              <Route path="/predict" element={
+                <DashboardLayout>
+                  <Prediction />
+                </DashboardLayout>
+              } />
+              <Route path="/analytics" element={
+                <DashboardLayout>
+                  <Analytics />
+                </DashboardLayout>
+              } />
+              <Route path="/model-info" element={
+                <DashboardLayout>
+                  <ModelInfo />
+                </DashboardLayout>
+              } />
+              <Route path="/reports" element={
+                <DashboardLayout>
+                  <Reports />
+                </DashboardLayout>
+              } />
+              <Route path="/settings" element={
+                <DashboardLayout>
+                  <Settings />
+                </DashboardLayout>
+              } />
+              <Route path="/about" element={
+                <DashboardLayout>
+                  <About />
+                </DashboardLayout>
+              } />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;
