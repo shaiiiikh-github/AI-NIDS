@@ -1,9 +1,11 @@
 // src/App.tsx
+import { Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import DocsPage from './pages/DocsPage';
 
 // Lazy load pages
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -31,6 +33,9 @@ function App() {
               {/* Public landing page – no layout */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/features" element={<Features />} />
+              <Route path="/docs" element={<DocsPage />} />
+              <Route path="/docs/:pageId" element={<DocsPage />} />
+              <Route path="/docs" element={<Navigate to="/docs/overview" replace />} />
 
               {/* Authenticated dashboard routes – with layout */}
               <Route path="/dashboard" element={

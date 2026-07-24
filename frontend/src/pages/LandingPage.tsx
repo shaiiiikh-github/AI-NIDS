@@ -218,7 +218,7 @@ export const LandingPage: React.FC = () => {
                         <nav className="hidden md:flex items-center gap-8">
                             <a href="#features" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Features</a>
                             <a href="#architecture" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Architecture</a>
-                            <a href="#docs" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Docs</a>
+                            <a href="/docs" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Docs</a>
                             <a href="#about" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">About</a>
                             <a href="#" className="text-neutral-400 hover:text-white transition-colors">
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -299,9 +299,11 @@ export const LandingPage: React.FC = () => {
                                         Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
                                     </PrimaryButton>
                                 </Link>
+                                <Link to="/docs">
                                 <SecondaryButton size="lg" className="px-8">
                                     View Docs <ExternalLink className="w-4 h-4 ml-2 inline" />
                                 </SecondaryButton>
+                                </Link>
                             </motion.div>
                             <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-6 text-sm text-neutral-400">
                                 <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-primary" /> ML Powered</span>
