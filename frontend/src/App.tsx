@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Lazy load pages
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const Features = lazy(() => import('./pages/Features'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Prediction = lazy(() => import('./pages/Prediction'));
 const Analytics = lazy(() => import('./pages/Analytics'));
@@ -28,6 +29,7 @@ function App() {
             <Routes>
               {/* Public landing page – no layout */}
               <Route path="/" element={<LandingPage />} />
+              <Route path="/features" element={<Features />} />
 
               {/* Authenticated dashboard routes – with layout */}
               <Route path="/dashboard" element={
