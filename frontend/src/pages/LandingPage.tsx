@@ -230,6 +230,7 @@ export const LandingPage: React.FC = () => {
                                     Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
                                 </PrimaryButton>
                             </Link>
+                            
                         </nav>
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
