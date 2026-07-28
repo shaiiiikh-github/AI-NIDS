@@ -1,0 +1,10 @@
+# LightGBM model files are line-based text formats that must be checked out
+# byte-for-byte. Do NOT let Git normalize line endings on these -- on Windows
+# with core.autocrlf enabled, LF gets rewritten to CRLF on checkout, which
+# breaks LightGBM's parser (it looks for exact markers like "Tree=0" on their
+# own line) and produces cascading "[Fatal] Model format error" output.
+models/*.txt -text
+
+# Parquet/CSV/data files are binary or line-sensitive -- don't let Git guess.
+*.parquet -text
+*.csv -text binary
