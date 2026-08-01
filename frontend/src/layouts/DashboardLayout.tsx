@@ -14,17 +14,18 @@ import {
   Bell,
   User,
   Menu,
-  X,
-  Sparkles,
   LogOut,
 } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Prediction', href: '/predict', icon: Cpu },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Model Info', href: '/model-info', icon: BookOpen },
   { name: 'Reports', href: '/reports', icon: FileText },
+  // { name: 'Identity', href: '/identity', icon: Shield }, // commented out
+ // { name: 'Profile', href: '/profile', icon: User },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'About', href: '/about', icon: Info },
 ];
@@ -32,6 +33,7 @@ const navigation = [
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useUser();
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -39,7 +41,6 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   const SidebarContent = () => (
     <>
-      {/* Branding – enhanced with gradient and glow */}
       <div className="p-5 pb-4">
         <div className="flex items-center gap-3 px-2 py-2 mb-2 bg-gradient-to-r from-indigo-600/10 to-indigo-400/5 rounded-xl border border-indigo-500/20 shadow-[0_0_30px_rgba(79,70,229,0.15)]">
           <div className="p-2 bg-indigo-600/20 rounded-xl border border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(79,70,229,0.25)]">
@@ -59,7 +60,6 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 space-y-0.5">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
@@ -76,7 +76,6 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                 }
               `}
             >
-              {/* Active indicator – left accent bar */}
               {isActive && (
                 <motion.div
                   layoutId="activeNavBar"
@@ -84,11 +83,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
-              <Icon
-                className={`w-4 h-4 transition-colors ${
-                  isActive ? 'text-indigo-400' : 'group-hover:text-white'
-                }`}
-              />
+              <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-indigo-400' : 'group-hover:text-white'}`} />
               <span className="flex-1">{item.name}</span>
               {isActive && (
                 <motion.span
@@ -102,22 +97,35 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         })}
       </nav>
 
-      {/* User Profile – enhanced with status and logout */}
+      {/* User section – dynamic */}
       <div className="p-4 border-t border-neutral-800/80 mt-auto">
-        <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-neutral-800/30 transition-colors cursor-pointer group">
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-400 border-2 border-indigo-500/30 flex items-center justify-center text-xs font-bold text-white shadow-[0_0_20px_rgba(79,70,229,0.3)]">
-              <User className="w-4 h-4" />
+        <div className="flex items-center gap-2">
+          <Link
+            to="/profile"
+            className="flex-1 flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-neutral-800/30 transition-colors cursor-pointer group"
+          >
+            <div className="relative">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-400 border-2 border-indigo-500/30 flex items-center justify-center text-xs font-bold text-white shadow-[0_0_20px_rgba(79,70,229,0.3)]">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.fullName} className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  user.fullName.charAt(0)
+                )}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-neutral-900 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-neutral-900 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-white truncate">SecOps Lead</div>
-            <div className="text-[10px] text-neutral-500 font-mono truncate">admin@sec.enterprise</div>
-          </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-white truncate">{user.fullName}</div>
+              <div className="text-[10px] text-neutral-500 font-mono truncate">{user.email}</div>
+            </div>
+          </Link>
           <button
-            className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50 transition-colors"
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50 transition-colors shrink-0"
             title="Sign out"
+            onClick={() => {
+              // handle logout
+              console.log('Logout clicked');
+            }}
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -127,16 +135,13 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   );
 
   return (
-    <div className="relative flex h-screen bg-[#09090b] text-neutral-100 overflow-hidden font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* Background grid (unchanged) */}
+    <div className="relative flex h-screen bg-[#0A0E1A] text-neutral-100 overflow-hidden font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
-      {/* Desktop Sidebar */}
       <aside className="relative z-10 w-64 border-r border-neutral-800/80 bg-neutral-900/50 backdrop-blur-xl hidden md:flex flex-col shrink-0 shadow-2xl shadow-black/20">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Drawer (unchanged) */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -160,7 +165,6 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         )}
       </AnimatePresence>
 
-      {/* Main Content Area (unchanged) */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-14 border-b border-neutral-800/80 bg-neutral-900/30 backdrop-blur-md flex items-center justify-between px-4 md:px-6 shrink-0">
           <div className="flex items-center gap-3">

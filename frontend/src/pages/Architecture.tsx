@@ -1,6 +1,7 @@
 // src/pages/Architecture.tsx
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import {
   Shield,
   Database,
@@ -21,7 +22,50 @@ import {
   CheckCircle,
   Lock,
   Globe,
+  Menu,
+  X,
+  Users,
+  ShieldCheck,
+  Award,
 } from 'lucide-react';
+
+// --- Custom Button Components ---
+const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; size?: 'sm' | 'lg'; onClick?: () => void }> = ({
+  children,
+  className = '',
+  size = 'lg',
+  onClick,
+}) => {
+  const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-5 py-1.5 text-sm';
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`relative overflow-hidden group bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] ${sizeClasses} ${className}`}
+    >
+      <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
+      <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+    </motion.button>
+  );
+};
+
+const SecondaryButton: React.FC<{ children: React.ReactNode; className?: string; size?: 'sm' | 'lg'; onClick?: () => void }> = ({
+  children,
+  className = '',
+  size = 'lg',
+  onClick,
+}) => {
+  const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-5 py-1.5 text-sm';
+  return (
+    <button
+      onClick={onClick}
+      className={`border border-white/20 text-white hover:bg-white/10 rounded-full font-medium transition-all active:scale-95 ${sizeClasses} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
 
 // --- Animation Variants ---
 const fadeInUp = {
@@ -37,33 +81,31 @@ const staggerContainer = {
   },
 };
 
-// --- Button Components ---
-const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <button className={`bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] active:scale-95 px-8 py-3 text-base ${className}`}>
-    {children}
-  </button>
-);
-
-const SecondaryButton: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <button className={`border border-white/20 text-white hover:bg-white/10 rounded-full font-medium transition-all active:scale-95 px-8 py-3 text-base ${className}`}>
-    {children}
-  </button>
-);
-
 // --- Subcomponents ---
-const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <motion.h2 variants={fadeInUp} className="text-4xl md:text-5xl font-bold text-white text-center mb-4 tracking-tight">
     {children}
   </motion.h2>
 );
 
-const SectionSubtitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const SectionSubtitle = ({ children }: { children: React.ReactNode }) => (
   <motion.p variants={fadeInUp} className="text-lg md:text-xl text-neutral-400 text-center max-w-3xl mx-auto mb-12">
     {children}
   </motion.p>
 );
 
-// --- Architecture Step (for flow diagrams) ---
+const TrustBadge = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
+  <motion.div
+    variants={fadeInUp}
+    whileHover={{ scale: 1.05 }}
+    className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-5 py-2.5 rounded-xl border border-white/10"
+  >
+    {icon}
+    <span className="text-sm font-medium text-white/80">{label}</span>
+  </motion.div>
+);
+
+// --- FlowStep (for architecture diagrams) ---
 interface FlowStepProps {
   label: string;
   icon: React.ReactNode;
@@ -94,6 +136,18 @@ const FlowStep: React.FC<FlowStepProps> = ({ label, icon, index, isLast = false,
 
 // --- Main Component ---
 export const Architecture: React.FC = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.7]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.98]);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Data for high-level flow
   const highLevelSteps = [
     { label: 'Dataset', icon: <Database className="w-7 h-7" /> },
@@ -152,7 +206,78 @@ export const Architecture: React.FC = () => {
   ];
 
   return (
-    <div className="bg-[#0B1220] text-white min-h-screen overflow-x-hidden font-sans">
+    <div className="bg-[#0B1220] text-white min-h-screen overflow-x-hidden font-sans selection:bg-primary/30 selection:text-white">
+
+      {/* ---- Floating Pill Navbar ---- */}
+      <header
+        className={`
+          fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-6xl
+          transition-all duration-300
+          ${scrolled
+            ? 'bg-surface/90 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20'
+            : 'bg-surface/60 backdrop-blur-md border border-white/5 shadow-lg shadow-black/10'
+          }
+          rounded-full px-6 py-2
+        `}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shield className="w-8 h-8 text-primary" />
+            <span className="text-xl font-bold tracking-tight text-white">AI‑NIDS</span>
+            <span className="hidden md:inline text-[10px] font-mono text-primary/60 border border-primary/30 px-2 py-0.5 rounded-full">
+              ENTERPRISE
+            </span>
+          </div>
+
+          <nav className="hidden md:flex items-center gap-6">
+            <Link to="/features" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Features</Link>
+            <Link to="/architecture" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Architecture</Link>
+            <Link to="/docs" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Docs</Link>
+            <Link to="/about" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">About</Link>
+            <a href="#" className="text-neutral-400 hover:text-white transition-colors">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.15 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.62.24 2.85.12 3.15.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+              </svg>
+            </a>
+            <Link to="/dashboard">
+              <PrimaryButton size="sm" className="px-5 py-1.5 text-sm">
+                Launch Dashboard <ArrowRight className="w-4 h-4 ml-1 inline" />
+              </PrimaryButton>
+            </Link>
+          </nav>
+
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden text-neutral-400 hover:text-white"
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden mt-2 pt-4 border-t border-white/10 overflow-hidden"
+            >
+              <div className="flex flex-col gap-3 pb-3">
+                <Link to="/features" className="text-neutral-300 hover:text-white transition-colors">Features</Link>
+                <Link to="/architecture" className="text-neutral-300 hover:text-white transition-colors">Architecture</Link>
+                <Link to="/docs" className="text-neutral-300 hover:text-white transition-colors">Documentation</Link>
+                <Link to="/about" className="text-neutral-300 hover:text-white transition-colors">About</Link>
+                <Link to="/dashboard" className="w-full">
+                  <PrimaryButton size="sm" className="w-full justify-center px-5 py-2 text-sm">
+                    Launch Dashboard <ArrowRight className="w-4 h-4 ml-1 inline" />
+                  </PrimaryButton>
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
 
       {/* ---- Hero ---- */}
       <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
