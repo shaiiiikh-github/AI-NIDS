@@ -12,8 +12,11 @@ import {
     Send,
     AlertTriangle,
     Clock,
-    Terminal
+    Terminal,
+    Info
 } from 'lucide-react';
+import type { AxiosError } from 'axios';
+import apiClient from '@/services/apiClient';
 import type { RiskLevel } from '@/types/nids';
 
 // 1. Define the strictly typed Zod Schema for the API Contract
@@ -40,6 +43,7 @@ interface PredictionResult {
 export const Prediction: React.FC = () => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [result, setResult] = useState<PredictionResult | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const {
         register,
@@ -53,35 +57,24 @@ export const Prediction: React.FC = () => {
         }
     });
 
-    // Mock API Submission
     const onSubmit = async (data: PredictionFormValues) => {
         setIsAnalyzing(true);
         setResult(null);
+        setError(null);
 
-        // Simulate FastAPI processing delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Simple mock logic to generate a response based on input
-        if (data.packetSize > 10000 || data.port === 22) {
-            setResult({
-                classification: 'Suspicious Payload Detected',
-                confidence: 0.94,
-                riskLevel: 'HIGH',
-                recommendation: 'Immediately block source IP and isolate target node.',
-                description: 'Large data payload and restricted port access suggest a potential data exfiltration or brute-force attempt.',
-                responseTimeMs: 14.2,
-            });
-        } else {
-            setResult({
-                classification: 'Normal Network Traffic',
-                confidence: 0.99,
-                riskLevel: 'SAFE',
-                recommendation: 'No action required. Continue monitoring.',
-                description: 'Packet conforms to standard protocol signatures with no known malicious patterns detected.',
-                responseTimeMs: 8.7,
-            });
+        try {
+            const response = await apiClient.post<PredictionResult>('/predict', data);
+            setResult(response.data);
+        } catch (err) {
+            const axiosErr = err as AxiosError<{ detail?: string }>;
+            setError(
+                axiosErr.response?.data?.detail ||
+                axiosErr.message ||
+                'Inference request failed. Confirm the backend is running on the configured API URL.'
+            );
+        } finally {
+            setIsAnalyzing(false);
         }
-        setIsAnalyzing(false);
     };
 
     const getRiskStyles = (level: RiskLevel) => {
@@ -109,9 +102,18 @@ export const Prediction: React.FC = () => {
                 <div className="w-full lg:w-1/2 bg-neutral-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl" />
 
-                    <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                         <Terminal className="w-5 h-5 text-indigo-400" /> Packet Parameters
                     </h2>
+
+                    <div className="mb-6 flex items-start gap-2 text-[11px] leading-relaxed text-neutral-400 bg-neutral-950/50 border border-neutral-800/80 rounded-xl p-3 relative z-10">
+                        <Info className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                        <span>
+                            This form submits a single approximated packet (protocol, size, port) to the model,
+                            not a captured flow. Fields the model needs beyond these are zero-filled, so results
+                            are a best-effort estimate -- not equivalent to live traffic analysis.
+                        </span>
+                    </div>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative z-10">
                         <div className="grid grid-cols-2 gap-4">
@@ -195,7 +197,7 @@ export const Prediction: React.FC = () => {
                 {/* Right Column: Animated Result Panel */}
                 <div className="w-full lg:w-1/2 min-h-[400px]">
                     <AnimatePresence mode="wait">
-                        {!result && !isAnalyzing && (
+                        {!result && !isAnalyzing && !error && (
                             <motion.div
                                 key="empty"
                                 initial={{ opacity: 0 }}
@@ -227,7 +229,21 @@ export const Prediction: React.FC = () => {
                             </motion.div>
                         )}
 
-                        {result && !isAnalyzing && (
+                        {error && !isAnalyzing && (
+                            <motion.div
+                                key="error"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="h-full flex flex-col items-center justify-center text-center p-8 rounded-2xl bg-neutral-900/40 backdrop-blur-md border border-red-500/20"
+                            >
+                                <ShieldAlert className="w-12 h-12 text-red-400 mb-4" />
+                                <h3 className="text-red-400 font-medium">Inference Failed</h3>
+                                <p className="text-xs text-neutral-500 mt-2 max-w-xs">{error}</p>
+                            </motion.div>
+                        )}
+
+                        {result && !isAnalyzing && !error && (
                             <motion.div
                                 key="result"
                                 initial={{ opacity: 0, x: 20 }}

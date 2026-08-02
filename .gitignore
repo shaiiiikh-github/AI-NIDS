@@ -5,3 +5,9 @@ backend/venv/
 # Datasets
 datasets/raw/
 datasets/processed/
+
+backend/live_capture/
+backend/pcap_capture/
+frontend/.env
+backend/app/__pycache__/
+backend/app/logs/
