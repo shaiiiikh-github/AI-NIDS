@@ -34,8 +34,12 @@ import time
 from scapy.utils import PcapReader
 from cicflowmeter.flow_session import FlowSession
 
-PCAP_DIR = r"D:\AI-NIDS\pcap_capture"
-CSV_OUTPUT_DIR = r"D:\AI-NIDS\live_capture"     # matches CICFLOWMETER_OUTPUT_DIR in live_ids_monitor.py
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+PCAP_DIR = os.path.join(PROJECT_ROOT, "pcap_capture")
+CSV_OUTPUT_DIR = os.path.join(PROJECT_ROOT, "live_capture")     # matches CICFLOWMETER_OUTPUT_DIR in live_ids_monitor.py
+
 POLL_INTERVAL_SECONDS = 5
 SETTLE_SECONDS = 3   # wait this long after a pcap stops growing before converting,
                       # so we don't grab a file tshark is still mid-write on
