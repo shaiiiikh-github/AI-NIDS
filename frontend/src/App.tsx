@@ -19,12 +19,12 @@ const ModelInfo = lazy(() => import('./pages/ModelInfo'));
 const Reports = lazy(() => import('./pages/Reports'));
 const Settings = lazy(() => import('./pages/Settings'));
 const About = lazy(() => import('./pages/About'));
-const SignIn = lazy(() => import('./pages/SignIn').then(m => ({ default: m.SignIn })));
-const SignUp = lazy(() => import('./pages/SignUp').then(m => ({ default: m.SignUp })));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 const IdentityCenter = lazy(() => import('./pages/IdentityCenter'));
-const Settings = lazy(() => import('./pages/Settings'));
-const About = lazy(() => import('./pages/About'));
+
+// Auth pages
+const SignIn = lazy(() => import('./pages/SignIn'));
+const SignUp = lazy(() => import('./pages/SignUp'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 2 } },
@@ -37,9 +37,6 @@ function App() {
         <ErrorBoundary>
           <Suspense fallback={<div className="p-8 text-center text-neutral-400">Loading...</div>}>
             <Routes>
-              {/* Public landing page – no layout */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/features" element={<Features />} />
               {/* Public routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/features" element={<Features />} />
@@ -53,42 +50,6 @@ function App() {
               <Route path="/signup" element={<SignUp />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* Authenticated dashboard routes – with layout */}
-              <Route path="/dashboard" element={
-                <DashboardLayout>
-                  <Dashboard />
-                </DashboardLayout>
-              } />
-              <Route path="/predict" element={
-                <DashboardLayout>
-                  <Prediction />
-                </DashboardLayout>
-              } />
-              <Route path="/analytics" element={
-                <DashboardLayout>
-                  <Analytics />
-                </DashboardLayout>
-              } />
-              <Route path="/model-info" element={
-                <DashboardLayout>
-                  <ModelInfo />
-                </DashboardLayout>
-              } />
-              <Route path="/reports" element={
-                <DashboardLayout>
-                  <Reports />
-                </DashboardLayout>
-              } />
-              <Route path="/settings" element={
-                <DashboardLayout>
-                  <Settings />
-                </DashboardLayout>
-              } />
-              <Route path="/about" element={
-                <DashboardLayout>
-                  <About />
-                </DashboardLayout>
-              } />
               {/* Authenticated dashboard routes – with layout */}
               <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
               <Route path="/predict" element={<DashboardLayout><Prediction /></DashboardLayout>} />
