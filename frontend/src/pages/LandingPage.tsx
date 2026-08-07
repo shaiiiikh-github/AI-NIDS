@@ -1,25 +1,17 @@
 // src/pages/LandingPage.tsx
 import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue } from 'framer-motion';
 import {
     Menu,
     X,
     Shield,
-    Cpu,
-    BarChart3,
     Zap,
-    LayoutDashboard,
-    Database,
     Cloud,
     ExternalLink,
     ArrowRight,
     CheckCircle,
     Sparkles,
-    Activity,
-    Network,
-    Server,
-    TrendingUp,
     ShieldCheck,
     Award,
     Globe,
@@ -34,12 +26,9 @@ import {
     YAxis,
     Tooltip,
     CartesianGrid,
-    PieChart,
-    Pie,
-    Cell,
 } from 'recharts';
 
-// --- Custom Button Components (with ripple/glow effect) ---
+// --- Custom Button Components (with enhanced glow) ---
 const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; size?: 'sm' | 'lg'; onClick?: () => void }> = ({
     children,
     className = '',
@@ -49,13 +38,14 @@ const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; s
     const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-5 py-1.5 text-sm';
     return (
         <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onClick}
-            className={`relative overflow-hidden group bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] ${sizeClasses} ${className}`}
+            className={`relative overflow-hidden group bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_60px_rgba(37,99,235,0.6)] ${sizeClasses} ${className}`}
         >
             <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
-            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <span className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </motion.button>
     );
 };
@@ -77,7 +67,7 @@ const SecondaryButton: React.FC<{ children: React.ReactNode; className?: string;
     );
 };
 
-// --- Animation variants ---
+// --- Animation variants (no explicit ease to avoid TypeScript errors) ---
 const fadeInUp = {
     hidden: { opacity: 0, y: 40 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -107,13 +97,97 @@ const SectionSubtitle = ({ children }: { children: React.ReactNode }) => (
 const TrustBadge = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
     <motion.div
         variants={fadeInUp}
-        whileHover={{ scale: 1.05 }}
-        className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-5 py-2.5 rounded-xl border border-white/10"
+        whileHover={{ scale: 1.08, rotate: 1 }}
+        className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-5 py-2.5 rounded-xl border border-white/10 shadow-lg shadow-black/10"
     >
         {icon}
         <span className="text-sm font-medium text-white/80">{label}</span>
     </motion.div>
 );
+
+// --- Feature card with 3D tilt ---
+const FeatureCard = ({ icon, title, description, gradient = false }: any) => {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const rotateX = useTransform(y, [-100, 100], [8, -8]);
+    const rotateY = useTransform(x, [-100, 100], [-8, 8]);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const xPos = e.clientX - rect.left - rect.width / 2;
+        const yPos = e.clientY - rect.top - rect.height / 2;
+        x.set(xPos);
+        y.set(yPos);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            variants={fadeInUp}
+            style={{ rotateX, rotateY }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            whileHover={{ y: -6, transition: { duration: 0.2 } }}
+            className={`group relative p-6 rounded-2xl border border-white/10 backdrop-blur-sm transition-all duration-300 ${
+                gradient ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20' : 'bg-white/5'
+            } hover:border-primary/40 hover:bg-white/10`}
+        >
+            <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                {icon}
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
+            <p className="text-sm text-neutral-400 leading-relaxed">{description}</p>
+            {gradient && (
+                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            )}
+        </motion.div>
+    );
+};
+
+// --- Statistics counter ---
+const StatCounter = ({ value, label, suffix = '', icon }: { value: number; label: string; suffix?: string; icon: React.ReactNode }) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const isInView = useInView(ref, { once: true, amount: 0.3 });
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        if (isInView) {
+            let start = 0;
+            const duration = 2000;
+            const step = Math.max(1, Math.floor(value / (duration / 16)));
+            const timer = setInterval(() => {
+                start += step;
+                if (start >= value) {
+                    setCount(value);
+                    clearInterval(timer);
+                } else {
+                    setCount(start);
+                }
+            }, 16);
+            return () => clearInterval(timer);
+        }
+    }, [isInView, value]);
+
+    return (
+        <motion.div
+            ref={ref}
+            whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(37,99,235,0.2)' }}
+            className="text-center p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 transition-all duration-300"
+        >
+            <div className="flex justify-center mb-2 text-primary">{icon}</div>
+            <div className="text-4xl md:text-5xl font-bold text-white font-mono tracking-tight">
+                {count.toLocaleString()}
+                {suffix}
+            </div>
+            <div className="text-sm text-neutral-400 mt-1">{label}</div>
+        </motion.div>
+    );
+};
 
 // --- Main Component ---
 export const LandingPage: React.FC = () => {
@@ -156,92 +230,31 @@ export const LandingPage: React.FC = () => {
         { time: '20:00', traffic: 280, threats: 18 },
     ];
 
-    const pieData = [
-        { name: 'DDoS', value: 42 },
-        { name: 'Brute Force', value: 28 },
-        { name: 'Malware', value: 20 },
-        { name: 'Other', value: 10 },
+    // --- Feature card data ---
+    const featureCards = [
+        {
+            icon: <Shield className="w-6 h-6" />,
+            title: 'AI Detection',
+            description: 'Deep learning models trained on CIC‑IDS2017 to detect zero‑day threats with 99%+ accuracy.',
+            gradient: true,
+        },
+        {
+            icon: <Zap className="w-6 h-6" />,
+            title: 'Fast Predictions',
+            description: 'Sub‑20ms inference latency for mission‑critical packet inspection.',
+        },
+        {
+            icon: <Cloud className="w-6 h-6" />,
+            title: 'Scalable Architecture',
+            description: 'Horizontally scalable to handle enterprise‑grade traffic.',
+        },
+        {
+            icon: <Lock className="w-6 h-6" />,
+            title: 'Enterprise Security',
+            description: 'Role‑based access control, audit logs, and compliance with SOC 2 standards.',
+            gradient: true,
+        },
     ];
-    const pieColors = ['#EF4444', '#F59E0B', '#8B5CF6', '#6B7280'];
-
-    // --- Statistics counter ---
-    const StatCounter = ({ value, label, suffix = '', icon }: { value: number; label: string; suffix?: string; icon: React.ReactNode }) => {
-        const ref = useRef<HTMLDivElement>(null);
-        const isInView = useInView(ref, { once: true, amount: 0.3 });
-        const [count, setCount] = useState(0);
-
-        useEffect(() => {
-            if (isInView) {
-                let start = 0;
-                const duration = 2000;
-                const step = Math.max(1, Math.floor(value / (duration / 16)));
-                const timer = setInterval(() => {
-                    start += step;
-                    if (start >= value) {
-                        setCount(value);
-                        clearInterval(timer);
-                    } else {
-                        setCount(start);
-                    }
-                }, 16);
-                return () => clearInterval(timer);
-            }
-        }, [isInView, value]);
-
-        return (
-            <div ref={ref} className="text-center p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
-                <div className="flex justify-center mb-2 text-primary">{icon}</div>
-                <div className="text-4xl md:text-5xl font-bold text-white font-mono tracking-tight">
-                    {count.toLocaleString()}
-                    {suffix}
-                </div>
-                <div className="text-sm text-neutral-400 mt-1">{label}</div>
-            </div>
-        );
-    };
-
-    // --- Feature card with 3D tilt ---
-    const FeatureCard = ({ icon, title, description, gradient = false }: any) => {
-        const x = useMotionValue(0);
-        const y = useMotionValue(0);
-        const rotateX = useTransform(y, [-100, 100], [8, -8]);
-        const rotateY = useTransform(x, [-100, 100], [-8, 8]);
-
-        const handleMouseMove = (e: React.MouseEvent) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const xPos = e.clientX - rect.left - rect.width / 2;
-            const yPos = e.clientY - rect.top - rect.height / 2;
-            x.set(xPos);
-            y.set(yPos);
-        };
-
-        const handleMouseLeave = () => {
-            x.set(0);
-            y.set(0);
-        };
-
-        return (
-            <motion.div
-                variants={fadeInUp}
-                style={{ rotateX, rotateY }}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className={`group relative p-6 rounded-2xl border border-white/10 backdrop-blur-sm transition-all duration-300 ${gradient ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20' : 'bg-white/5'
-                    } hover:border-primary/40 hover:bg-white/10`}
-            >
-                <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                    {icon}
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed">{description}</p>
-                {gradient && (
-                    <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                )}
-            </motion.div>
-        );
-    };
 
     return (
         <div className="bg-[#0B1220] text-white min-h-screen overflow-x-hidden font-sans selection:bg-primary/30 selection:text-white">
@@ -259,7 +272,6 @@ export const LandingPage: React.FC = () => {
         `}
             >
                 <div className="flex items-center justify-between">
-                    {/* Logo */}
                     <div className="flex items-center gap-3">
                         <Shield className="w-8 h-8 text-primary" />
                         <span className="text-xl font-bold tracking-tight text-white">AI‑NIDS</span>
@@ -267,8 +279,6 @@ export const LandingPage: React.FC = () => {
                             ENTERPRISE
                         </span>
                     </div>
-
-                    {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-6">
                         <Link to="/features" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Features</Link>
                         <Link to="/architecture" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Architecture</Link>
@@ -285,8 +295,6 @@ export const LandingPage: React.FC = () => {
                             </PrimaryButton>
                         </Link>
                     </nav>
-
-                    {/* Mobile Menu Toggle */}
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="md:hidden text-neutral-400 hover:text-white"
@@ -295,8 +303,6 @@ export const LandingPage: React.FC = () => {
                         {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                     </button>
                 </div>
-
-                {/* Mobile Menu (expands under the pill) */}
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
@@ -323,11 +329,13 @@ export const LandingPage: React.FC = () => {
 
             {/* ---- Hero ---- */}
             <section ref={heroRef} className="relative min-h-screen flex items-center pt-32 pb-10 overflow-hidden">
-                {/* Animated background glows */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-float" />
-                    <div className="absolute bottom-1/3 right-1/3 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl animate-float-delayed" />
-                    <div className="absolute top-3/4 left-1/2 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl animate-float-slow" />
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
+                    <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float-delayed" />
+                    <div className="absolute top-3/4 left-1/2 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float-slow" />
+                    <div className="absolute top-10 left-10 w-3 h-3 bg-primary/30 rounded-full blur-sm animate-pulse" />
+                    <div className="absolute bottom-20 right-20 w-2 h-2 bg-emerald-400/30 rounded-full blur-sm animate-pulse delay-200" />
+                    <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-amber-400/30 rounded-full blur-sm animate-pulse delay-500" />
                 </div>
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none" />
 
@@ -348,7 +356,10 @@ export const LandingPage: React.FC = () => {
                             </motion.div>
                             <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight">
                                 AI‑Powered Network
-                                <span className="text-primary block">Intrusion Detection</span>
+                                <span className="text-primary block">
+                                    Intrusion Detection
+                                    <span className="inline-block ml-2 text-4xl md:text-5xl text-primary/80 animate-pulse">|</span>
+                                </span>
                             </motion.h1>
                             <motion.p variants={fadeInUp} className="text-xl text-neutral-400 max-w-xl leading-relaxed">
                                 Combining Data Mining, Machine Learning, FastAPI, and React to detect malicious traffic in real time, with sub‑20ms latency.
@@ -380,7 +391,7 @@ export const LandingPage: React.FC = () => {
                             transition={{ duration: 0.8, delay: 0.3 }}
                             className="relative"
                         >
-                            <div className="bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
+                            <div className="bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl hover:shadow-[0_0_60px_rgba(37,99,235,0.15)] transition-shadow duration-500">
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="col-span-1 space-y-3">
                                         <div className="flex items-center gap-2 text-xs font-medium text-neutral-400">
@@ -472,14 +483,14 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* ---- Trust Section ---- */}
-            <section className="py-12 border-y border-white/5 bg-white/5">
+            <section className="py-12 border-y border-white/5 bg-white/5 overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
+                        className="flex flex-wrap justify-center items-center gap-8 md:gap-12"
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                         variants={staggerContainer}
-                        className="flex flex-wrap justify-center items-center gap-8 md:gap-12"
                     >
                         <TrustBadge icon={<ShieldCheck className="w-5 h-5 text-primary" />} label="SOC 2 Type II" />
                         <TrustBadge icon={<Lock className="w-5 h-5 text-primary" />} label="GDPR Compliant" />
@@ -503,40 +514,11 @@ export const LandingPage: React.FC = () => {
                         whileInView="visible"
                         viewport={{ once: true }}
                         variants={staggerContainer}
-                        className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
                     >
-                        <FeatureCard
-                            icon={<Cpu className="w-6 h-6" />}
-                            title="AI Detection"
-                            description="Deep learning models trained on CIC‑IDS2017 to detect zero‑day threats with 99%+ accuracy."
-                            gradient
-                        />
-                        <FeatureCard
-                            icon={<BarChart3 className="w-6 h-6" />}
-                            title="Threat Analytics"
-                            description="Rich visualizations and real‑time dashboards to understand attack vectors and trends."
-                        />
-                        <FeatureCard
-                            icon={<Zap className="w-6 h-6" />}
-                            title="Fast Predictions"
-                            description="Sub‑20ms inference latency for mission‑critical packet inspection."
-                        />
-                        <FeatureCard
-                            icon={<LayoutDashboard className="w-6 h-6" />}
-                            title="Interactive Dashboard"
-                            description="Monitor network health, model performance, and threat status at a glance."
-                        />
-                        <FeatureCard
-                            icon={<Cloud className="w-6 h-6" />}
-                            title="Scalable Architecture"
-                            description="Designed to handle enterprise‑scale traffic with horizontal scaling."
-                        />
-                        <FeatureCard
-                            icon={<Shield className="w-6 h-6" />}
-                            title="Enterprise Security"
-                            description="Role‑based access control, audit logs, and compliance with SOC 2 standards."
-                            gradient
-                        />
+                        {featureCards.map((card, idx) => (
+                            <FeatureCard key={idx} {...card} />
+                        ))}
                     </motion.div>
                 </div>
             </section>
@@ -548,44 +530,25 @@ export const LandingPage: React.FC = () => {
                     <SectionSubtitle>
                         From data ingestion to actionable intelligence.
                     </SectionSubtitle>
-                    <motion.div
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={staggerContainer}
-                        className="relative flex flex-col items-center"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 w-full">
-                            {[
-                                { icon: Database, label: 'Dataset' },
-                                { icon: Cpu, label: 'ML Model' },
-                                { icon: Server, label: 'FastAPI' },
-                                { icon: Network, label: 'REST API' },
-                                { icon: LayoutDashboard, label: 'Dashboard' },
-                            ].map((item, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    variants={fadeInUp}
-                                    className="flex flex-col items-center text-center"
-                                >
-                                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
-                                        <item.icon className="w-8 h-8" />
-                                    </div>
-                                    <span className="text-sm font-medium text-white">{item.label}</span>
-                                    {idx < 4 && (
-                                        <motion.div
-                                            animate={{ x: [0, 4, 0] }}
-                                            transition={{ repeat: Infinity, duration: 1.5, delay: idx * 0.2 }}
-                                            className="hidden md:block text-primary/40 mt-2"
-                                        >
-                                            <ArrowRight className="w-5 h-5" />
-                                        </motion.div>
-                                    )}
-                                </motion.div>
-                            ))}
-                        </div>
-                        <div className="hidden md:block absolute top-1/3 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent -z-10" />
-                    </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 text-center">
+                        {['Dataset', 'ML Model', 'FastAPI', 'REST API', 'Dashboard'].map((label, idx) => (
+                            <div key={idx} className="flex flex-col items-center">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                                    <Shield className="w-8 h-8" />
+                                </div>
+                                <span className="text-sm font-medium text-white mt-3">{label}</span>
+                                {idx < 4 && (
+                                    <motion.div
+                                        animate={{ x: [0, 4, 0] }}
+                                        transition={{ repeat: Infinity, duration: 1.5, delay: idx * 0.2 }}
+                                        className="hidden md:block text-primary/40 mt-2"
+                                    >
+                                        <ArrowRight className="w-5 h-5" />
+                                    </motion.div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 
@@ -626,12 +589,12 @@ export const LandingPage: React.FC = () => {
                                     <div className="bg-white/5 rounded-xl p-4">
                                         <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Total Inspections</div>
                                         <div className="text-2xl font-bold text-white">{liveScans.toLocaleString()}</div>
-                                        <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1"><TrendingUp className="w-3 h-3" /> +12.4%</div>
+                                        <div className="text-xs text-emerald-400">+12.4%</div>
                                     </div>
                                     <div className="bg-white/5 rounded-xl p-4">
                                         <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Threats Detected</div>
                                         <div className="text-2xl font-bold text-red-400">{liveThreats.toLocaleString()}</div>
-                                        <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1"><TrendingUp className="w-3 h-3" /> -8.1%</div>
+                                        <div className="text-xs text-emerald-400">-8.1%</div>
                                     </div>
                                     <div className="bg-white/5 rounded-xl p-4">
                                         <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Model Accuracy</div>
@@ -658,16 +621,7 @@ export const LandingPage: React.FC = () => {
                                         </ResponsiveContainer>
                                     </div>
                                     <div className="bg-white/5 rounded-xl p-4 h-48 flex items-center justify-center">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
-                                                    {pieData.map((_, index) => (
-                                                        <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                                            </PieChart>
-                                        </ResponsiveContainer>
+                                        <div className="text-neutral-500 text-sm">Attack Distribution</div>
                                     </div>
                                 </div>
                                 <div className="bg-white/5 rounded-xl p-4">
@@ -729,13 +683,13 @@ export const LandingPage: React.FC = () => {
                         <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/40 to-primary/10" />
                         <div className="space-y-8 pl-12">
                             {[
-                                { label: 'Dataset (CIC‑IDS2017)', icon: Database },
-                                { label: 'Data Cleaning', icon: CheckCircle },
-                                { label: 'EDA', icon: BarChart3 },
-                                { label: 'Feature Engineering', icon: Cpu },
-                                { label: 'Training (Scikit‑Learn)', icon: Activity },
-                                { label: 'Evaluation', icon: ShieldCheck },
-                                { label: 'Deployment (FastAPI)', icon: Server },
+                                'Dataset (CIC‑IDS2017)',
+                                'Data Cleaning',
+                                'EDA',
+                                'Feature Engineering',
+                                'Training (Scikit‑Learn)',
+                                'Evaluation',
+                                'Deployment (FastAPI)',
                             ].map((step, index) => (
                                 <motion.div
                                     key={index}
@@ -750,8 +704,8 @@ export const LandingPage: React.FC = () => {
                                     </div>
                                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-6 py-4 flex-1 hover:border-primary/40 transition-colors">
                                         <div className="flex items-center gap-3">
-                                            <step.icon className="w-5 h-5 text-primary" />
-                                            <span className="text-sm font-medium text-white">{step.label}</span>
+                                            <Shield className="w-5 h-5 text-primary" />
+                                            <span className="text-sm font-medium text-white">{step}</span>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -806,8 +760,8 @@ export const LandingPage: React.FC = () => {
                         Built on a robust dataset and evaluated for enterprise deployment.
                     </SectionSubtitle>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <StatCounter value={79} label="Features" icon={<Database className="w-6 h-6" />} />
-                        <StatCounter value={610492} label="Records" suffix="+" icon={<Activity className="w-6 h-6" />} />
+                        <StatCounter value={79} label="Features" icon={<Shield className="w-6 h-6" />} />
+                        <StatCounter value={610492} label="Records" suffix="+" icon={<Shield className="w-6 h-6" />} />
                         <StatCounter value={15} label="Attack Categories" suffix="+" icon={<Shield className="w-6 h-6" />} />
                         <StatCounter value={98} label="Accuracy" suffix="%" icon={<Award className="w-6 h-6" />} />
                     </div>

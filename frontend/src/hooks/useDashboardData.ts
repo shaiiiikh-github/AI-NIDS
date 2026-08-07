@@ -104,7 +104,7 @@ const mockPredictions: PredictionRecord[] = [
 ];
 
 // ---------- Fetch function (with mock fallback) ----------
-const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'false';
 
 const fetchDashboardData = async () => {
   if (useMockData) {
