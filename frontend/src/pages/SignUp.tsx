@@ -1,18 +1,22 @@
+// src/pages/SignUp.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Shield, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
 
-const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; type?: "button" | "submit" | "reset"; onClick?: () => void }> = ({
-    children,
-    className = '',
-    type = "button",
-    onClick,
-}) => {
+const PrimaryButton: React.FC<{
+    children: React.ReactNode;
+    className?: string;
+    type?: "button" | "submit" | "reset";
+    onClick?: () => void;
+    disabled?: boolean;
+}> = ({ children, className = '', type = "button", onClick, disabled }) => {
     return (
         <button
             type={type}
             onClick={onClick}
+            disabled={disabled}
             className={`w-full bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] active:scale-95 px-6 py-3 text-base flex items-center justify-center gap-2 ${className}`}
         >
             {children}
@@ -22,19 +26,26 @@ const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; t
 
 export const SignUp: React.FC = () => {
     const navigate = useNavigate();
-    const [name, setName] = useState('');
+    const { signup, isLoading } = useUser();
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
         if (password !== confirmPassword) {
-            alert('Passwords do not match');
+            setError('Passwords do not match');
             return;
         }
-        // UI-only flow, navigating to dashboard directly to simulate registration
-        navigate('/dashboard');
+        try {
+            await signup({ fullName, email, password });
+            navigate('/dashboard');
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Signup failed. Please try again.');
+        }
     };
 
     return (
@@ -61,6 +72,12 @@ export const SignUp: React.FC = () => {
                 <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 sm:p-6 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
                     
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-3">
                             <div>
@@ -73,8 +90,8 @@ export const SignUp: React.FC = () => {
                                         id="name" 
                                         type="text" 
                                         required
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
                                         className="block w-full pl-9 pr-3 py-2 bg-black/20 border border-white/10 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-colors sm:text-sm" 
                                         placeholder="John Doe" 
                                     />
@@ -136,8 +153,8 @@ export const SignUp: React.FC = () => {
                             </div>
                         </div>
 
-                        <PrimaryButton type="submit" className="py-2.5">
-                            Sign Up
+                        <PrimaryButton type="submit" className="py-2.5" disabled={isLoading}>
+                            {isLoading ? 'Creating account...' : 'Sign Up'}
                             <ArrowRight className="w-4 h-4 ml-1" />
                         </PrimaryButton>
                     </form>

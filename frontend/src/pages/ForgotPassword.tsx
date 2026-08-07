@@ -1,18 +1,22 @@
+// src/pages/ForgotPassword.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Mail, KeyRound, ArrowRight, ArrowLeft } from 'lucide-react';
+import { authService } from '@/services/authService';
 
-const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; type?: "button" | "submit" | "reset"; onClick?: () => void }> = ({
-    children,
-    className = '',
-    type = "button",
-    onClick,
-}) => {
+const PrimaryButton: React.FC<{
+    children: React.ReactNode;
+    className?: string;
+    type?: "button" | "submit" | "reset";
+    onClick?: () => void;
+    disabled?: boolean;
+}> = ({ children, className = '', type = "button", onClick, disabled }) => {
     return (
         <button
             type={type}
             onClick={onClick}
+            disabled={disabled}
             className={`w-full bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] active:scale-95 px-6 py-3 text-base flex items-center justify-center gap-2 ${className}`}
         >
             {children}
@@ -25,17 +29,41 @@ export const ForgotPassword: React.FC = () => {
     const [step, setStep] = useState<'email' | 'otp'>('email');
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
 
-    const handleRequestOTP = (e: React.FormEvent) => {
+    const handleRequestOTP = async (e: React.FormEvent) => {
         e.preventDefault();
-        // UI-only flow: switch to OTP verification step
-        setStep('otp');
+        setError(null);
+        setLoading(true);
+        try {
+            await authService.forgotPassword({ email });
+            setStep('otp');
+            setSuccess(true);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleVerifyOTP = (e: React.FormEvent) => {
+    const handleVerifyOTP = async (e: React.FormEvent) => {
         e.preventDefault();
-        // UI-only flow: navigate to dashboard or back to sign in
-        navigate('/signin');
+        setError(null);
+        setLoading(true);
+        try {
+            const result = await authService.verifyOtp({ email, otp });
+            if (result.valid && result.resetToken) {
+                navigate('/signin');
+            } else {
+                setError('Invalid OTP. Please try again.');
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Verification failed.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -46,7 +74,6 @@ export const ForgotPassword: React.FC = () => {
                 transition={{ duration: 0.5 }}
                 className="w-full max-w-md relative z-10"
             >
-                {/* Logo & Header */}
                 <div className="text-center mb-8">
                     <Link to="/" className="inline-flex items-center gap-2 mb-6 group">
                         <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -63,10 +90,20 @@ export const ForgotPassword: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Form Card */}
                 <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-8 shadow-2xl relative overflow-hidden min-h-[300px]">
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
                     
+                    {success && step === 'otp' && (
+                        <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm">
+                            OTP sent successfully!
+                        </div>
+                    )}
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                            {error}
+                        </div>
+                    )}
+
                     <AnimatePresence mode="wait">
                         {step === 'email' ? (
                             <motion.form 
@@ -98,8 +135,8 @@ export const ForgotPassword: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <PrimaryButton type="submit">
-                                    Send Verification OTP
+                                <PrimaryButton type="submit" disabled={loading}>
+                                    {loading ? 'Sending...' : 'Send Verification OTP'}
                                     <ArrowRight className="w-4 h-4 ml-1" />
                                 </PrimaryButton>
                             </motion.form>
@@ -134,8 +171,8 @@ export const ForgotPassword: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <PrimaryButton type="submit">
-                                    Verify Code
+                                <PrimaryButton type="submit" disabled={loading}>
+                                    {loading ? 'Verifying...' : 'Verify Code'}
                                     <ArrowRight className="w-4 h-4 ml-1" />
                                 </PrimaryButton>
                                 
@@ -162,7 +199,6 @@ export const ForgotPassword: React.FC = () => {
                 </p>
             </motion.div>
             
-            {/* Background glowing effects */}
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
         </div>
