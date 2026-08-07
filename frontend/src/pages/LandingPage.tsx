@@ -1,6 +1,7 @@
 // src/pages/LandingPage.tsx
 import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import {
     Menu,
@@ -39,6 +40,7 @@ import {
     Cell,
 } from 'recharts';
 
+// --- Custom Button Components (replaces shadcn/ui) ---
 // --- Custom Button Components (with ripple/glow effect) ---
 const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; size?: 'sm' | 'lg'; onClick?: () => void }> = ({
     children,
@@ -46,6 +48,14 @@ const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; s
     size = 'lg',
     onClick,
 }) => {
+    const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-6 py-2 text-sm';
+    return (
+        <button
+            onClick={onClick}
+            className={`bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] active:scale-95 ${sizeClasses} ${className}`}
+        >
+            {children}
+        </button>
     const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-5 py-1.5 text-sm';
     return (
         <motion.button
@@ -66,6 +76,7 @@ const SecondaryButton: React.FC<{ children: React.ReactNode; className?: string;
     size = 'lg',
     onClick,
 }) => {
+    const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-6 py-2 text-sm';
     const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-5 py-1.5 text-sm';
     return (
         <button
@@ -77,6 +88,7 @@ const SecondaryButton: React.FC<{ children: React.ReactNode; className?: string;
     );
 };
 
+// --- Animation variants (without explicit easing to avoid TypeScript errors) ---
 // --- Animation variants ---
 const fadeInUp = {
     hidden: { opacity: 0, y: 40 },
@@ -105,6 +117,7 @@ const SectionSubtitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const TrustBadge = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
+    <motion.div variants={fadeInUp} className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
     <motion.div
         variants={fadeInUp}
         whileHover={{ scale: 1.05 }}
@@ -146,6 +159,7 @@ export const LandingPage: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // --- Mock data for dashboard preview ---
     // --- Mock data for charts ---
     const areaData = [
         { time: '00:00', traffic: 200, threats: 10 },
@@ -200,6 +214,24 @@ export const LandingPage: React.FC = () => {
         );
     };
 
+    // --- Feature card ---
+    const FeatureCard = ({ icon, title, description, gradient = false }: any) => (
+        <motion.div
+            variants={fadeInUp}
+            whileHover={{ y: -6, transition: { duration: 0.2 } }}
+            className={`group relative p-6 rounded-2xl border border-white/10 backdrop-blur-sm transition-all duration-300 ${gradient ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20' : 'bg-white/5'
+                } hover:border-primary/40 hover:bg-white/10`}
+        >
+            <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                {icon}
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
+            <p className="text-sm text-neutral-400 leading-relaxed">{description}</p>
+            {gradient && (
+                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            )}
+        </motion.div>
+    );
     // --- Feature card with 3D tilt ---
     const FeatureCard = ({ icon, title, description, gradient = false }: any) => {
         const x = useMotionValue(0);
@@ -246,6 +278,48 @@ export const LandingPage: React.FC = () => {
     return (
         <div className="bg-[#0B1220] text-white min-h-screen overflow-x-hidden font-sans selection:bg-primary/30 selection:text-white">
 
+            {/* ---- Navbar ---- */}
+            <header
+                className={`
+          fixed top-0 left-0 right-0 z-50 transition-all duration-300
+          ${scrolled ? 'bg-surface/90 backdrop-blur-xl border-b border-white/5 shadow-2xl' : 'bg-transparent'}
+        `}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        <div className="flex items-center gap-3">
+                            <Shield className="w-8 h-8 text-primary" />
+                            <span className="text-xl font-bold tracking-tight text-white">AI‑NIDS</span>
+                            <span className="text-[10px] font-mono text-primary/60 border border-primary/30 px-2 py-0.5 rounded-full">
+                                ENTERPRISE
+                            </span>
+                        </div>
+                        <nav className="hidden md:flex items-center gap-8">
+                            <a href="#features" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Features</a>
+                            <a href="#architecture" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Architecture</a>
+                            <a href="/docs" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Docs</a>
+                            <a href="#about" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">About</a>
+                            <a href="#" className="text-neutral-400 hover:text-white transition-colors">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.15 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.62.24 2.85.12 3.15.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                                </svg>
+                            </a>
+                            <Link to="/signin">
+                                <PrimaryButton size="lg" className="px-8">
+                                    Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
+                                </PrimaryButton>
+                            </Link>
+
+                        </nav>
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="md:hidden text-neutral-400 hover:text-white"
+                            aria-label="Toggle menu"
+                        >
+                            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        </button>
+                    </div>
+                </div>
             {/* ---- Floating Pill Navbar ---- */}
             <header
                 className={`
@@ -303,6 +377,16 @@ export const LandingPage: React.FC = () => {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
+                            className="md:hidden bg-surface/95 backdrop-blur-xl border-t border-white/5"
+                        >
+                            <div className="px-4 py-6 space-y-4">
+                                <a href="#features" className="block text-neutral-300 hover:text-white">Features</a>
+                                <a href="#architecture" className="block text-neutral-300 hover:text-white">Architecture</a>
+                                <a href="#docs" className="block text-neutral-300 hover:text-white">Documentation</a>
+                                <a href="#about" className="block text-neutral-300 hover:text-white">About</a>
+                                <Link to="/signin">
+                                    <PrimaryButton size="lg" className="px-8">
+                                        Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
                             className="md:hidden mt-2 pt-4 border-t border-white/10 overflow-hidden"
                         >
                             <div className="flex flex-col gap-3 pb-3">
@@ -322,6 +406,10 @@ export const LandingPage: React.FC = () => {
             </header>
 
             {/* ---- Hero ---- */}
+            <section ref={heroRef} className="relative min-h-screen flex items-center pt-20 pb-10 overflow-hidden">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none" />
+                <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
             <section ref={heroRef} className="relative min-h-screen flex items-center pt-32 pb-10 overflow-hidden">
                 {/* Animated background glows */}
                 <div className="absolute inset-0 pointer-events-none">
@@ -354,6 +442,7 @@ export const LandingPage: React.FC = () => {
                                 Combining Data Mining, Machine Learning, FastAPI, and React to detect malicious traffic in real time, with sub‑20ms latency.
                             </motion.p>
                             <motion.div variants={fadeInUp} className="flex flex-wrap gap-4">
+                                <Link to="/signin">
                                 <Link to="/dashboard">
                                     <PrimaryButton size="lg" className="px-8">
                                         Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
@@ -409,6 +498,11 @@ export const LandingPage: React.FC = () => {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="bg-white/5 rounded-xl p-3">
                                                 <div className="text-[10px] text-neutral-500">Total Scans</div>
+                                                <div className="text-xl font-bold text-white">1.84M</div>
+                                            </div>
+                                            <div className="bg-white/5 rounded-xl p-3">
+                                                <div className="text-[10px] text-neutral-500">Threats</div>
+                                                <div className="text-xl font-bold text-red-400">1,203</div>
                                                 <div className="text-xl font-bold text-white">{liveScans.toLocaleString()}</div>
                                             </div>
                                             <div className="bg-white/5 rounded-xl p-3">
@@ -453,6 +547,7 @@ export const LandingPage: React.FC = () => {
                                     <Zap className="w-4 h-4 text-yellow-400" />
                                     <div>
                                         <div className="text-[10px] text-neutral-400">Latency</div>
+                                        <div className="text-sm font-bold text-white">8ms</div>
                                         <div className="text-sm font-bold text-white">{liveLatency.toFixed(1)}ms</div>
                                     </div>
                                 </div>
@@ -462,6 +557,7 @@ export const LandingPage: React.FC = () => {
                                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                                     <div>
                                         <div className="text-[10px] text-neutral-400">Accuracy</div>
+                                        <div className="text-sm font-bold text-white">99.4%</div>
                                         <div className="text-sm font-bold text-white">{liveAccuracy.toFixed(1)}%</div>
                                     </div>
                                 </div>
@@ -492,6 +588,7 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* ---- Features ---- */}
+            <section id="features" className="py-24">
             <section id="features" className="py-24 scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>Enterprise‑Grade Capabilities</SectionTitle>
@@ -542,6 +639,7 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* ---- Architecture ---- */}
+            <section id="architecture" className="py-24 bg-white/5">
             <section id="architecture" className="py-24 bg-white/5 scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>Platform Architecture</SectionTitle>
@@ -625,21 +723,25 @@ export const LandingPage: React.FC = () => {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="bg-white/5 rounded-xl p-4">
                                         <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Total Inspections</div>
+                                        <div className="text-2xl font-bold text-white">1,847,293</div>
                                         <div className="text-2xl font-bold text-white">{liveScans.toLocaleString()}</div>
                                         <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1"><TrendingUp className="w-3 h-3" /> +12.4%</div>
                                     </div>
                                     <div className="bg-white/5 rounded-xl p-4">
                                         <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Threats Detected</div>
+                                        <div className="text-2xl font-bold text-red-400">1,203</div>
                                         <div className="text-2xl font-bold text-red-400">{liveThreats.toLocaleString()}</div>
                                         <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1"><TrendingUp className="w-3 h-3" /> -8.1%</div>
                                     </div>
                                     <div className="bg-white/5 rounded-xl p-4">
                                         <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Model Accuracy</div>
+                                        <div className="text-2xl font-bold text-emerald-400">99.4%</div>
                                         <div className="text-2xl font-bold text-emerald-400">{liveAccuracy.toFixed(1)}%</div>
                                         <div className="text-xs text-neutral-400 mt-1">F1: 0.994</div>
                                     </div>
                                     <div className="bg-white/5 rounded-xl p-4">
                                         <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Avg Latency</div>
+                                        <div className="text-2xl font-bold text-white">8ms</div>
                                         <div className="text-2xl font-bold text-white">{liveLatency.toFixed(1)}ms</div>
                                         <div className="text-xs text-neutral-400 mt-1">p99: 18ms</div>
                                     </div>
