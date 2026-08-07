@@ -17,9 +17,14 @@ const Prediction = lazy(() => import('./pages/Prediction'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const ModelInfo = lazy(() => import('./pages/ModelInfo'));
 const Reports = lazy(() => import('./pages/Reports'));
-const IdentityCenter = lazy(() => import('./pages/IdentityCenter'));
 const Settings = lazy(() => import('./pages/Settings'));
 const About = lazy(() => import('./pages/About'));
+const IdentityCenter = lazy(() => import('./pages/IdentityCenter'));
+
+// Auth pages
+const SignIn = lazy(() => import('./pages/SignIn'));
+const SignUp = lazy(() => import('./pages/SignUp'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 2 } },
@@ -39,6 +44,11 @@ function App() {
               <Route path="/docs" element={<DocsPage />} />
               <Route path="/docs/:pageId" element={<DocsPage />} />
               <Route path="/docs" element={<Navigate to="/docs/overview" replace />} />
+
+              {/* Auth routes - no layout */}
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* Authenticated dashboard routes – with layout */}
               <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />

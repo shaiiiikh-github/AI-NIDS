@@ -1,7 +1,8 @@
 #backend
 backend/venv/
-
-
+#frontend node modules
+node_modules/
+frontend/node_modules/
 # Datasets
 datasets/raw/
 datasets/processed/

@@ -1,6 +1,6 @@
 // src/pages/LandingPage.tsx
 import { Link } from 'react-router-dom';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue } from 'framer-motion';
 import {
     Menu,
@@ -28,7 +28,7 @@ import {
     CartesianGrid,
 } from 'recharts';
 
-// --- Custom Button Components (with enhanced glow) ---
+// --- Custom Button Components with enhanced glow ---
 const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; size?: 'sm' | 'lg'; onClick?: () => void }> = ({
     children,
     className = '',
@@ -151,9 +151,9 @@ const FeatureCard = ({ icon, title, description, gradient = false }: any) => {
 
 // --- Statistics counter ---
 const StatCounter = ({ value, label, suffix = '', icon }: { value: number; label: string; suffix?: string; icon: React.ReactNode }) => {
-    const ref = useRef<HTMLDivElement>(null);
-    const isInView = useInView(ref, { once: true, amount: 0.3 });
     const [count, setCount] = useState(0);
+    const ref = React.useRef<HTMLDivElement>(null);
+    const isInView = useInView(ref, { once: true, amount: 0.3 });
 
     useEffect(() => {
         if (isInView) {
@@ -193,12 +193,11 @@ const StatCounter = ({ value, label, suffix = '', icon }: { value: number; label
 export const LandingPage: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const heroRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll();
     const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.7]);
     const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.98]);
 
-    // Live dashboard data simulation
+    // Live dashboard data
     const [liveScans, setLiveScans] = useState(1847293);
     const [liveThreats, setLiveThreats] = useState(1203);
     const [liveAccuracy, setLiveAccuracy] = useState(99.4);
@@ -262,14 +261,14 @@ export const LandingPage: React.FC = () => {
             {/* ---- Floating Pill Navbar ---- */}
             <header
                 className={`
-          fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-6xl
-          transition-all duration-300
-          ${scrolled
+                    fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-6xl
+                    transition-all duration-300
+                    ${scrolled
                         ? 'bg-surface/90 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20'
                         : 'bg-surface/60 backdrop-blur-md border border-white/5 shadow-lg shadow-black/10'
                     }
-          rounded-full px-6 py-2
-        `}
+                    rounded-full px-6 py-2
+                `}
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -284,7 +283,9 @@ export const LandingPage: React.FC = () => {
                         <Link to="/architecture" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Architecture</Link>
                         <Link to="/docs" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Docs</Link>
                         <Link to="/about" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">About</Link>
-                        <a href="#" className="text-neutral-400 hover:text-white transition-colors">
+                        <Link to="/signin" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Sign In</Link>
+                        <Link to="/signup" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Sign Up</Link>
+                        <a href="https://github.com/shaiiiikh-github/AI-NIDS" className="text-neutral-400 hover:text-white transition-colors">
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.15 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.62.24 2.85.12 3.15.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                             </svg>
@@ -328,7 +329,8 @@ export const LandingPage: React.FC = () => {
             </header>
 
             {/* ---- Hero ---- */}
-            <section ref={heroRef} className="relative min-h-screen flex items-center pt-32 pb-10 overflow-hidden">
+            <section className="relative min-h-screen flex items-center pt-32 pb-10 overflow-hidden">
+                {/* Animated background glows */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
                     <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float-delayed" />
@@ -552,7 +554,7 @@ export const LandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* ---- Live Dashboard Preview ---- */}
+            {/* ---- Live Dashboard Preview (shortened) ---- */}
             <section className="py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>Live Dashboard</SectionTitle>
@@ -566,113 +568,47 @@ export const LandingPage: React.FC = () => {
                         transition={{ duration: 0.6 }}
                         className="bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
                     >
-                        <div className="grid lg:grid-cols-4 gap-6">
-                            <div className="lg:col-span-1 space-y-4">
-                                <div className="flex items-center gap-2 text-xs font-medium text-neutral-400">
-                                    <Shield className="w-4 h-4 text-primary" /> AI‑NIDS
-                                </div>
-                                <div className="space-y-1">
-                                    {['Dashboard', 'Prediction', 'Analytics', 'Model Info', 'Reports', 'Settings'].map((item) => (
-                                        <div key={item} className={`text-sm px-3 py-2 rounded-lg transition-colors ${item === 'Dashboard' ? 'bg-primary/20 text-white' : 'text-neutral-400 hover:bg-white/5'}`}>
-                                            {item}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="pt-4 border-t border-white/10">
-                                    <div className="flex items-center gap-2 text-xs text-neutral-400">
-                                        <Users className="w-4 h-4" /> SecOps Lead
-                                    </div>
-                                </div>
+                        {/* Quick summary cards */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Total Inspections</div>
+                                <div className="text-2xl font-bold text-white">{liveScans.toLocaleString()}</div>
+                                <div className="text-xs text-emerald-400">+12.4%</div>
                             </div>
-                            <div className="lg:col-span-3 space-y-6">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Total Inspections</div>
-                                        <div className="text-2xl font-bold text-white">{liveScans.toLocaleString()}</div>
-                                        <div className="text-xs text-emerald-400">+12.4%</div>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Threats Detected</div>
-                                        <div className="text-2xl font-bold text-red-400">{liveThreats.toLocaleString()}</div>
-                                        <div className="text-xs text-emerald-400">-8.1%</div>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Model Accuracy</div>
-                                        <div className="text-2xl font-bold text-emerald-400">{liveAccuracy.toFixed(1)}%</div>
-                                        <div className="text-xs text-neutral-400 mt-1">F1: 0.994</div>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Avg Latency</div>
-                                        <div className="text-2xl font-bold text-white">{liveLatency.toFixed(1)}ms</div>
-                                        <div className="text-xs text-neutral-400 mt-1">p99: 18ms</div>
-                                    </div>
-                                </div>
-                                <div className="grid md:grid-cols-3 gap-4">
-                                    <div className="md:col-span-2 bg-white/5 rounded-xl p-4 h-48">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={areaData}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                                                <XAxis dataKey="time" stroke="#9CA3AF" fontSize={10} />
-                                                <YAxis stroke="#9CA3AF" fontSize={10} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                                                <Area type="monotone" dataKey="traffic" stroke="#2563EB" fill="#2563EB" fillOpacity={0.2} />
-                                                <Area type="monotone" dataKey="threats" stroke="#EF4444" fill="#EF4444" fillOpacity={0.15} />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4 h-48 flex items-center justify-center">
-                                        <div className="text-neutral-500 text-sm">Attack Distribution</div>
-                                    </div>
-                                </div>
-                                <div className="bg-white/5 rounded-xl p-4">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-sm font-medium text-white">Recent Predictions</span>
-                                        <span className="text-xs text-neutral-400">Live</span>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-xs">
-                                            <thead>
-                                                <tr className="text-neutral-400 border-b border-white/10">
-                                                    <th className="py-2 text-left">ID</th>
-                                                    <th className="py-2 text-left">Source</th>
-                                                    <th className="py-2 text-left">Risk</th>
-                                                    <th className="py-2 text-left">Conf.</th>
-                                                    <th className="py-2 text-left">Latency</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="border-b border-white/5">
-                                                    <td className="py-2 text-white">pred-7f3a</td>
-                                                    <td className="text-neutral-300">192.168.1.105</td>
-                                                    <td><span className="text-emerald-400">SAFE</span></td>
-                                                    <td>99.7%</td>
-                                                    <td>7ms</td>
-                                                </tr>
-                                                <tr className="border-b border-white/5">
-                                                    <td className="py-2 text-white">pred-8b4d</td>
-                                                    <td className="text-neutral-300">10.0.0.7</td>
-                                                    <td><span className="text-amber-400">HIGH</span></td>
-                                                    <td>89.0%</td>
-                                                    <td>14ms</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="py-2 text-white">pred-9c5f</td>
-                                                    <td className="text-neutral-300">172.16.0.45</td>
-                                                    <td><span className="text-emerald-400">SAFE</span></td>
-                                                    <td>99.2%</td>
-                                                    <td>6ms</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Threats Detected</div>
+                                <div className="text-2xl font-bold text-red-400">{liveThreats.toLocaleString()}</div>
+                                <div className="text-xs text-emerald-400">-8.1%</div>
                             </div>
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Model Accuracy</div>
+                                <div className="text-2xl font-bold text-emerald-400">{liveAccuracy.toFixed(1)}%</div>
+                                <div className="text-xs text-neutral-400">F1: 0.994</div>
+                            </div>
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Avg Latency</div>
+                                <div className="text-2xl font-bold text-white">{liveLatency.toFixed(1)}ms</div>
+                                <div className="text-xs text-neutral-400">p99: 18ms</div>
+                            </div>
+                        </div>
+                        {/* Mini chart */}
+                        <div className="h-48 w-full bg-white/5 rounded-xl p-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={areaData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                                    <XAxis dataKey="time" stroke="#9CA3AF" fontSize={10} />
+                                    <YAxis stroke="#9CA3AF" fontSize={10} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                                    <Area type="monotone" dataKey="traffic" stroke="#2563EB" fill="#2563EB" fillOpacity={0.2} />
+                                    <Area type="monotone" dataKey="threats" stroke="#EF4444" fill="#EF4444" fillOpacity={0.15} />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* ---- ML Pipeline ---- */}
+            {/* ---- ML Pipeline (simplified) ---- */}
             <section className="py-24 bg-white/5">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>ML Pipeline</SectionTitle>
