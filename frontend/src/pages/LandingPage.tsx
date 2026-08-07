@@ -1,26 +1,17 @@
 // src/pages/LandingPage.tsx
 import { Link } from 'react-router-dom';
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
-import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue } from 'framer-motion';
 import {
     Menu,
     X,
     Shield,
-    Cpu,
-    BarChart3,
     Zap,
-    LayoutDashboard,
-    Database,
     Cloud,
     ExternalLink,
     ArrowRight,
     CheckCircle,
     Sparkles,
-    Activity,
-    Network,
-    Server,
-    TrendingUp,
     ShieldCheck,
     Award,
     Globe,
@@ -35,37 +26,26 @@ import {
     YAxis,
     Tooltip,
     CartesianGrid,
-    PieChart,
-    Pie,
-    Cell,
 } from 'recharts';
 
-// --- Custom Button Components (replaces shadcn/ui) ---
-// --- Custom Button Components (with ripple/glow effect) ---
+// --- Custom Button Components with enhanced glow ---
 const PrimaryButton: React.FC<{ children: React.ReactNode; className?: string; size?: 'sm' | 'lg'; onClick?: () => void }> = ({
     children,
     className = '',
     size = 'lg',
     onClick,
 }) => {
-    const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-6 py-2 text-sm';
-    return (
-        <button
-            onClick={onClick}
-            className={`bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] active:scale-95 ${sizeClasses} ${className}`}
-        >
-            {children}
-        </button>
     const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-5 py-1.5 text-sm';
     return (
         <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onClick}
-            className={`relative overflow-hidden group bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_50px_rgba(37,99,235,0.5)] ${sizeClasses} ${className}`}
+            className={`relative overflow-hidden group bg-primary hover:bg-primary/90 text-white rounded-full font-medium transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_60px_rgba(37,99,235,0.6)] ${sizeClasses} ${className}`}
         >
             <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
-            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <span className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </motion.button>
     );
 };
@@ -76,7 +56,6 @@ const SecondaryButton: React.FC<{ children: React.ReactNode; className?: string;
     size = 'lg',
     onClick,
 }) => {
-    const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-6 py-2 text-sm';
     const sizeClasses = size === 'lg' ? 'px-8 py-3 text-base' : 'px-5 py-1.5 text-sm';
     return (
         <button
@@ -88,7 +67,6 @@ const SecondaryButton: React.FC<{ children: React.ReactNode; className?: string;
     );
 };
 
-// --- Animation variants (without explicit easing to avoid TypeScript errors) ---
 // --- Animation variants ---
 const fadeInUp = {
     hidden: { opacity: 0, y: 40 },
@@ -117,27 +95,109 @@ const SectionSubtitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const TrustBadge = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-    <motion.div variants={fadeInUp} className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
     <motion.div
         variants={fadeInUp}
-        whileHover={{ scale: 1.05 }}
-        className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-5 py-2.5 rounded-xl border border-white/10"
+        whileHover={{ scale: 1.08, rotate: 1 }}
+        className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-5 py-2.5 rounded-xl border border-white/10 shadow-lg shadow-black/10"
     >
         {icon}
         <span className="text-sm font-medium text-white/80">{label}</span>
     </motion.div>
 );
 
+// --- Feature card with 3D tilt ---
+const FeatureCard = ({ icon, title, description, gradient = false }: any) => {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const rotateX = useTransform(y, [-100, 100], [8, -8]);
+    const rotateY = useTransform(x, [-100, 100], [-8, 8]);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const xPos = e.clientX - rect.left - rect.width / 2;
+        const yPos = e.clientY - rect.top - rect.height / 2;
+        x.set(xPos);
+        y.set(yPos);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            variants={fadeInUp}
+            style={{ rotateX, rotateY }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            whileHover={{ y: -6, transition: { duration: 0.2 } }}
+            className={`group relative p-6 rounded-2xl border border-white/10 backdrop-blur-sm transition-all duration-300 ${
+                gradient ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20' : 'bg-white/5'
+            } hover:border-primary/40 hover:bg-white/10`}
+        >
+            <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                {icon}
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
+            <p className="text-sm text-neutral-400 leading-relaxed">{description}</p>
+            {gradient && (
+                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            )}
+        </motion.div>
+    );
+};
+
+// --- Statistics counter ---
+const StatCounter = ({ value, label, suffix = '', icon }: { value: number; label: string; suffix?: string; icon: React.ReactNode }) => {
+    const [count, setCount] = useState(0);
+    const ref = React.useRef<HTMLDivElement>(null);
+    const isInView = useInView(ref, { once: true, amount: 0.3 });
+
+    useEffect(() => {
+        if (isInView) {
+            let start = 0;
+            const duration = 2000;
+            const step = Math.max(1, Math.floor(value / (duration / 16)));
+            const timer = setInterval(() => {
+                start += step;
+                if (start >= value) {
+                    setCount(value);
+                    clearInterval(timer);
+                } else {
+                    setCount(start);
+                }
+            }, 16);
+            return () => clearInterval(timer);
+        }
+    }, [isInView, value]);
+
+    return (
+        <motion.div
+            ref={ref}
+            whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(37,99,235,0.2)' }}
+            className="text-center p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 transition-all duration-300"
+        >
+            <div className="flex justify-center mb-2 text-primary">{icon}</div>
+            <div className="text-4xl md:text-5xl font-bold text-white font-mono tracking-tight">
+                {count.toLocaleString()}
+                {suffix}
+            </div>
+            <div className="text-sm text-neutral-400 mt-1">{label}</div>
+        </motion.div>
+    );
+};
+
 // --- Main Component ---
 export const LandingPage: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const heroRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll();
     const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.7]);
     const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.98]);
 
-    // Live dashboard data simulation
+    // Live dashboard data
     const [liveScans, setLiveScans] = useState(1847293);
     const [liveThreats, setLiveThreats] = useState(1203);
     const [liveAccuracy, setLiveAccuracy] = useState(99.4);
@@ -159,7 +219,6 @@ export const LandingPage: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // --- Mock data for dashboard preview ---
     // --- Mock data for charts ---
     const areaData = [
         { time: '00:00', traffic: 200, threats: 10 },
@@ -170,170 +229,48 @@ export const LandingPage: React.FC = () => {
         { time: '20:00', traffic: 280, threats: 18 },
     ];
 
-    const pieData = [
-        { name: 'DDoS', value: 42 },
-        { name: 'Brute Force', value: 28 },
-        { name: 'Malware', value: 20 },
-        { name: 'Other', value: 10 },
+    // --- Feature card data ---
+    const featureCards = [
+        {
+            icon: <Shield className="w-6 h-6" />,
+            title: 'AI Detection',
+            description: 'Deep learning models trained on CIC‑IDS2017 to detect zero‑day threats with 99%+ accuracy.',
+            gradient: true,
+        },
+        {
+            icon: <Zap className="w-6 h-6" />,
+            title: 'Fast Predictions',
+            description: 'Sub‑20ms inference latency for mission‑critical packet inspection.',
+        },
+        {
+            icon: <Cloud className="w-6 h-6" />,
+            title: 'Scalable Architecture',
+            description: 'Horizontally scalable to handle enterprise‑grade traffic.',
+        },
+        {
+            icon: <Lock className="w-6 h-6" />,
+            title: 'Enterprise Security',
+            description: 'Role‑based access control, audit logs, and compliance with SOC 2 standards.',
+            gradient: true,
+        },
     ];
-    const pieColors = ['#EF4444', '#F59E0B', '#8B5CF6', '#6B7280'];
-
-    // --- Statistics counter ---
-    const StatCounter = ({ value, label, suffix = '', icon }: { value: number; label: string; suffix?: string; icon: React.ReactNode }) => {
-        const ref = useRef<HTMLDivElement>(null);
-        const isInView = useInView(ref, { once: true, amount: 0.3 });
-        const [count, setCount] = useState(0);
-
-        useEffect(() => {
-            if (isInView) {
-                let start = 0;
-                const duration = 2000;
-                const step = Math.max(1, Math.floor(value / (duration / 16)));
-                const timer = setInterval(() => {
-                    start += step;
-                    if (start >= value) {
-                        setCount(value);
-                        clearInterval(timer);
-                    } else {
-                        setCount(start);
-                    }
-                }, 16);
-                return () => clearInterval(timer);
-            }
-        }, [isInView, value]);
-
-        return (
-            <div ref={ref} className="text-center p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
-                <div className="flex justify-center mb-2 text-primary">{icon}</div>
-                <div className="text-4xl md:text-5xl font-bold text-white font-mono tracking-tight">
-                    {count.toLocaleString()}
-                    {suffix}
-                </div>
-                <div className="text-sm text-neutral-400 mt-1">{label}</div>
-            </div>
-        );
-    };
-
-    // --- Feature card ---
-    const FeatureCard = ({ icon, title, description, gradient = false }: any) => (
-        <motion.div
-            variants={fadeInUp}
-            whileHover={{ y: -6, transition: { duration: 0.2 } }}
-            className={`group relative p-6 rounded-2xl border border-white/10 backdrop-blur-sm transition-all duration-300 ${gradient ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20' : 'bg-white/5'
-                } hover:border-primary/40 hover:bg-white/10`}
-        >
-            <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                {icon}
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-            <p className="text-sm text-neutral-400 leading-relaxed">{description}</p>
-            {gradient && (
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            )}
-        </motion.div>
-    );
-    // --- Feature card with 3D tilt ---
-    const FeatureCard = ({ icon, title, description, gradient = false }: any) => {
-        const x = useMotionValue(0);
-        const y = useMotionValue(0);
-        const rotateX = useTransform(y, [-100, 100], [8, -8]);
-        const rotateY = useTransform(x, [-100, 100], [-8, 8]);
-
-        const handleMouseMove = (e: React.MouseEvent) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const xPos = e.clientX - rect.left - rect.width / 2;
-            const yPos = e.clientY - rect.top - rect.height / 2;
-            x.set(xPos);
-            y.set(yPos);
-        };
-
-        const handleMouseLeave = () => {
-            x.set(0);
-            y.set(0);
-        };
-
-        return (
-            <motion.div
-                variants={fadeInUp}
-                style={{ rotateX, rotateY }}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className={`group relative p-6 rounded-2xl border border-white/10 backdrop-blur-sm transition-all duration-300 ${gradient ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/20' : 'bg-white/5'
-                    } hover:border-primary/40 hover:bg-white/10`}
-            >
-                <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                    {icon}
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed">{description}</p>
-                {gradient && (
-                    <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                )}
-            </motion.div>
-        );
-    };
 
     return (
         <div className="bg-[#0B1220] text-white min-h-screen overflow-x-hidden font-sans selection:bg-primary/30 selection:text-white">
 
-            {/* ---- Navbar ---- */}
-            <header
-                className={`
-          fixed top-0 left-0 right-0 z-50 transition-all duration-300
-          ${scrolled ? 'bg-surface/90 backdrop-blur-xl border-b border-white/5 shadow-2xl' : 'bg-transparent'}
-        `}
-            >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center gap-3">
-                            <Shield className="w-8 h-8 text-primary" />
-                            <span className="text-xl font-bold tracking-tight text-white">AI‑NIDS</span>
-                            <span className="text-[10px] font-mono text-primary/60 border border-primary/30 px-2 py-0.5 rounded-full">
-                                ENTERPRISE
-                            </span>
-                        </div>
-                        <nav className="hidden md:flex items-center gap-8">
-                            <a href="#features" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Features</a>
-                            <a href="#architecture" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Architecture</a>
-                            <a href="/docs" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Docs</a>
-                            <a href="#about" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">About</a>
-                            <a href="#" className="text-neutral-400 hover:text-white transition-colors">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.15 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.62.24 2.85.12 3.15.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                                </svg>
-                            </a>
-                            <Link to="/signin">
-                                <PrimaryButton size="lg" className="px-8">
-                                    Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
-                                </PrimaryButton>
-                            </Link>
-
-                        </nav>
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="md:hidden text-neutral-400 hover:text-white"
-                            aria-label="Toggle menu"
-                        >
-                            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                        </button>
-                    </div>
-                </div>
             {/* ---- Floating Pill Navbar ---- */}
             <header
                 className={`
-          fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-6xl
-          transition-all duration-300
-          ${scrolled
+                    fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-6xl
+                    transition-all duration-300
+                    ${scrolled
                         ? 'bg-surface/90 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/20'
                         : 'bg-surface/60 backdrop-blur-md border border-white/5 shadow-lg shadow-black/10'
                     }
-          rounded-full px-6 py-2
-        `}
+                    rounded-full px-6 py-2
+                `}
             >
                 <div className="flex items-center justify-between">
-                    {/* Logo */}
                     <div className="flex items-center gap-3">
                         <Shield className="w-8 h-8 text-primary" />
                         <span className="text-xl font-bold tracking-tight text-white">AI‑NIDS</span>
@@ -342,7 +279,6 @@ export const LandingPage: React.FC = () => {
                         </span>
                     </div>
 
-                    {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-6">
                         <Link to="/features" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Features</Link>
                         <Link to="/architecture" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Architecture</Link>
@@ -360,7 +296,6 @@ export const LandingPage: React.FC = () => {
                         </Link>
                     </nav>
 
-                    {/* Mobile Menu Toggle */}
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="md:hidden text-neutral-400 hover:text-white"
@@ -370,23 +305,12 @@ export const LandingPage: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Mobile Menu (expands under the pill) */}
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="md:hidden bg-surface/95 backdrop-blur-xl border-t border-white/5"
-                        >
-                            <div className="px-4 py-6 space-y-4">
-                                <a href="#features" className="block text-neutral-300 hover:text-white">Features</a>
-                                <a href="#architecture" className="block text-neutral-300 hover:text-white">Architecture</a>
-                                <a href="#docs" className="block text-neutral-300 hover:text-white">Documentation</a>
-                                <a href="#about" className="block text-neutral-300 hover:text-white">About</a>
-                                <Link to="/signin">
-                                    <PrimaryButton size="lg" className="px-8">
-                                        Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
                             className="md:hidden mt-2 pt-4 border-t border-white/10 overflow-hidden"
                         >
                             <div className="flex flex-col gap-3 pb-3">
@@ -406,16 +330,15 @@ export const LandingPage: React.FC = () => {
             </header>
 
             {/* ---- Hero ---- */}
-            <section ref={heroRef} className="relative min-h-screen flex items-center pt-20 pb-10 overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none" />
-                <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-            <section ref={heroRef} className="relative min-h-screen flex items-center pt-32 pb-10 overflow-hidden">
+            <section className="relative min-h-screen flex items-center pt-32 pb-10 overflow-hidden">
                 {/* Animated background glows */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-float" />
-                    <div className="absolute bottom-1/3 right-1/3 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl animate-float-delayed" />
-                    <div className="absolute top-3/4 left-1/2 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl animate-float-slow" />
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
+                    <div className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl animate-float-delayed" />
+                    <div className="absolute top-3/4 left-1/2 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float-slow" />
+                    <div className="absolute top-10 left-10 w-3 h-3 bg-primary/30 rounded-full blur-sm animate-pulse" />
+                    <div className="absolute bottom-20 right-20 w-2 h-2 bg-emerald-400/30 rounded-full blur-sm animate-pulse delay-200" />
+                    <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-amber-400/30 rounded-full blur-sm animate-pulse delay-500" />
                 </div>
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none" />
 
@@ -436,13 +359,15 @@ export const LandingPage: React.FC = () => {
                             </motion.div>
                             <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight">
                                 AI‑Powered Network
-                                <span className="text-primary block">Intrusion Detection</span>
+                                <span className="text-primary block">
+                                    Intrusion Detection
+                                    <span className="inline-block ml-2 text-4xl md:text-5xl text-primary/80 animate-pulse">|</span>
+                                </span>
                             </motion.h1>
                             <motion.p variants={fadeInUp} className="text-xl text-neutral-400 max-w-xl leading-relaxed">
                                 Combining Data Mining, Machine Learning, FastAPI, and React to detect malicious traffic in real time, with sub‑20ms latency.
                             </motion.p>
                             <motion.div variants={fadeInUp} className="flex flex-wrap gap-4">
-                                <Link to="/signin">
                                 <Link to="/dashboard">
                                     <PrimaryButton size="lg" className="px-8">
                                         Launch Dashboard <ArrowRight className="w-4 h-4 ml-2 inline" />
@@ -469,7 +394,7 @@ export const LandingPage: React.FC = () => {
                             transition={{ duration: 0.8, delay: 0.3 }}
                             className="relative"
                         >
-                            <div className="bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
+                            <div className="bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl hover:shadow-[0_0_60px_rgba(37,99,235,0.15)] transition-shadow duration-500">
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="col-span-1 space-y-3">
                                         <div className="flex items-center gap-2 text-xs font-medium text-neutral-400">
@@ -498,11 +423,6 @@ export const LandingPage: React.FC = () => {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="bg-white/5 rounded-xl p-3">
                                                 <div className="text-[10px] text-neutral-500">Total Scans</div>
-                                                <div className="text-xl font-bold text-white">1.84M</div>
-                                            </div>
-                                            <div className="bg-white/5 rounded-xl p-3">
-                                                <div className="text-[10px] text-neutral-500">Threats</div>
-                                                <div className="text-xl font-bold text-red-400">1,203</div>
                                                 <div className="text-xl font-bold text-white">{liveScans.toLocaleString()}</div>
                                             </div>
                                             <div className="bg-white/5 rounded-xl p-3">
@@ -547,7 +467,6 @@ export const LandingPage: React.FC = () => {
                                     <Zap className="w-4 h-4 text-yellow-400" />
                                     <div>
                                         <div className="text-[10px] text-neutral-400">Latency</div>
-                                        <div className="text-sm font-bold text-white">8ms</div>
                                         <div className="text-sm font-bold text-white">{liveLatency.toFixed(1)}ms</div>
                                     </div>
                                 </div>
@@ -557,7 +476,6 @@ export const LandingPage: React.FC = () => {
                                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                                     <div>
                                         <div className="text-[10px] text-neutral-400">Accuracy</div>
-                                        <div className="text-sm font-bold text-white">99.4%</div>
                                         <div className="text-sm font-bold text-white">{liveAccuracy.toFixed(1)}%</div>
                                     </div>
                                 </div>
@@ -568,14 +486,14 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* ---- Trust Section ---- */}
-            <section className="py-12 border-y border-white/5 bg-white/5">
+            <section className="py-12 border-y border-white/5 bg-white/5 overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
+                        className="flex flex-wrap justify-center items-center gap-8 md:gap-12"
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                         variants={staggerContainer}
-                        className="flex flex-wrap justify-center items-center gap-8 md:gap-12"
                     >
                         <TrustBadge icon={<ShieldCheck className="w-5 h-5 text-primary" />} label="SOC 2 Type II" />
                         <TrustBadge icon={<Lock className="w-5 h-5 text-primary" />} label="GDPR Compliant" />
@@ -588,7 +506,6 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* ---- Features ---- */}
-            <section id="features" className="py-24">
             <section id="features" className="py-24 scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>Enterprise‑Grade Capabilities</SectionTitle>
@@ -600,94 +517,45 @@ export const LandingPage: React.FC = () => {
                         whileInView="visible"
                         viewport={{ once: true }}
                         variants={staggerContainer}
-                        className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
                     >
-                        <FeatureCard
-                            icon={<Cpu className="w-6 h-6" />}
-                            title="AI Detection"
-                            description="Deep learning models trained on CIC‑IDS2017 to detect zero‑day threats with 99%+ accuracy."
-                            gradient
-                        />
-                        <FeatureCard
-                            icon={<BarChart3 className="w-6 h-6" />}
-                            title="Threat Analytics"
-                            description="Rich visualizations and real‑time dashboards to understand attack vectors and trends."
-                        />
-                        <FeatureCard
-                            icon={<Zap className="w-6 h-6" />}
-                            title="Fast Predictions"
-                            description="Sub‑20ms inference latency for mission‑critical packet inspection."
-                        />
-                        <FeatureCard
-                            icon={<LayoutDashboard className="w-6 h-6" />}
-                            title="Interactive Dashboard"
-                            description="Monitor network health, model performance, and threat status at a glance."
-                        />
-                        <FeatureCard
-                            icon={<Cloud className="w-6 h-6" />}
-                            title="Scalable Architecture"
-                            description="Designed to handle enterprise‑scale traffic with horizontal scaling."
-                        />
-                        <FeatureCard
-                            icon={<Shield className="w-6 h-6" />}
-                            title="Enterprise Security"
-                            description="Role‑based access control, audit logs, and compliance with SOC 2 standards."
-                            gradient
-                        />
+                        {featureCards.map((card, idx) => (
+                            <FeatureCard key={idx} {...card} />
+                        ))}
                     </motion.div>
                 </div>
             </section>
 
             {/* ---- Architecture ---- */}
-            <section id="architecture" className="py-24 bg-white/5">
             <section id="architecture" className="py-24 bg-white/5 scroll-mt-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>Platform Architecture</SectionTitle>
                     <SectionSubtitle>
                         From data ingestion to actionable intelligence.
                     </SectionSubtitle>
-                    <motion.div
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={staggerContainer}
-                        className="relative flex flex-col items-center"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 w-full">
-                            {[
-                                { icon: Database, label: 'Dataset' },
-                                { icon: Cpu, label: 'ML Model' },
-                                { icon: Server, label: 'FastAPI' },
-                                { icon: Network, label: 'REST API' },
-                                { icon: LayoutDashboard, label: 'Dashboard' },
-                            ].map((item, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    variants={fadeInUp}
-                                    className="flex flex-col items-center text-center"
-                                >
-                                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
-                                        <item.icon className="w-8 h-8" />
-                                    </div>
-                                    <span className="text-sm font-medium text-white">{item.label}</span>
-                                    {idx < 4 && (
-                                        <motion.div
-                                            animate={{ x: [0, 4, 0] }}
-                                            transition={{ repeat: Infinity, duration: 1.5, delay: idx * 0.2 }}
-                                            className="hidden md:block text-primary/40 mt-2"
-                                        >
-                                            <ArrowRight className="w-5 h-5" />
-                                        </motion.div>
-                                    )}
-                                </motion.div>
-                            ))}
-                        </div>
-                        <div className="hidden md:block absolute top-1/3 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent -z-10" />
-                    </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6 text-center">
+                        {['Dataset', 'ML Model', 'FastAPI', 'REST API', 'Dashboard'].map((label, idx) => (
+                            <div key={idx} className="flex flex-col items-center">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                                    <Shield className="w-8 h-8" />
+                                </div>
+                                <span className="text-sm font-medium text-white mt-3">{label}</span>
+                                {idx < 4 && (
+                                    <motion.div
+                                        animate={{ x: [0, 4, 0] }}
+                                        transition={{ repeat: Infinity, duration: 1.5, delay: idx * 0.2 }}
+                                        className="hidden md:block text-primary/40 mt-2"
+                                    >
+                                        <ArrowRight className="w-5 h-5" />
+                                    </motion.div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 
-            {/* ---- Live Dashboard Preview ---- */}
+            {/* ---- Live Dashboard Preview (shortened) ---- */}
             <section className="py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>Live Dashboard</SectionTitle>
@@ -701,126 +569,47 @@ export const LandingPage: React.FC = () => {
                         transition={{ duration: 0.6 }}
                         className="bg-surface/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
                     >
-                        <div className="grid lg:grid-cols-4 gap-6">
-                            <div className="lg:col-span-1 space-y-4">
-                                <div className="flex items-center gap-2 text-xs font-medium text-neutral-400">
-                                    <Shield className="w-4 h-4 text-primary" /> AI‑NIDS
-                                </div>
-                                <div className="space-y-1">
-                                    {['Dashboard', 'Prediction', 'Analytics', 'Model Info', 'Reports', 'Settings'].map((item) => (
-                                        <div key={item} className={`text-sm px-3 py-2 rounded-lg transition-colors ${item === 'Dashboard' ? 'bg-primary/20 text-white' : 'text-neutral-400 hover:bg-white/5'}`}>
-                                            {item}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="pt-4 border-t border-white/10">
-                                    <div className="flex items-center gap-2 text-xs text-neutral-400">
-                                        <Users className="w-4 h-4" /> SecOps Lead
-                                    </div>
-                                </div>
+                        {/* Quick summary cards */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Total Inspections</div>
+                                <div className="text-2xl font-bold text-white">{liveScans.toLocaleString()}</div>
+                                <div className="text-xs text-emerald-400">+12.4%</div>
                             </div>
-                            <div className="lg:col-span-3 space-y-6">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Total Inspections</div>
-                                        <div className="text-2xl font-bold text-white">1,847,293</div>
-                                        <div className="text-2xl font-bold text-white">{liveScans.toLocaleString()}</div>
-                                        <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1"><TrendingUp className="w-3 h-3" /> +12.4%</div>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Threats Detected</div>
-                                        <div className="text-2xl font-bold text-red-400">1,203</div>
-                                        <div className="text-2xl font-bold text-red-400">{liveThreats.toLocaleString()}</div>
-                                        <div className="text-xs text-emerald-400 flex items-center gap-1 mt-1"><TrendingUp className="w-3 h-3" /> -8.1%</div>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Model Accuracy</div>
-                                        <div className="text-2xl font-bold text-emerald-400">99.4%</div>
-                                        <div className="text-2xl font-bold text-emerald-400">{liveAccuracy.toFixed(1)}%</div>
-                                        <div className="text-xs text-neutral-400 mt-1">F1: 0.994</div>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4">
-                                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Avg Latency</div>
-                                        <div className="text-2xl font-bold text-white">8ms</div>
-                                        <div className="text-2xl font-bold text-white">{liveLatency.toFixed(1)}ms</div>
-                                        <div className="text-xs text-neutral-400 mt-1">p99: 18ms</div>
-                                    </div>
-                                </div>
-                                <div className="grid md:grid-cols-3 gap-4">
-                                    <div className="md:col-span-2 bg-white/5 rounded-xl p-4 h-48">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={areaData}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                                                <XAxis dataKey="time" stroke="#9CA3AF" fontSize={10} />
-                                                <YAxis stroke="#9CA3AF" fontSize={10} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                                                <Area type="monotone" dataKey="traffic" stroke="#2563EB" fill="#2563EB" fillOpacity={0.2} />
-                                                <Area type="monotone" dataKey="threats" stroke="#EF4444" fill="#EF4444" fillOpacity={0.15} />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    <div className="bg-white/5 rounded-xl p-4 h-48 flex items-center justify-center">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
-                                                    {pieData.map((_, index) => (
-                                                        <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div className="bg-white/5 rounded-xl p-4">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-sm font-medium text-white">Recent Predictions</span>
-                                        <span className="text-xs text-neutral-400">Live</span>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-xs">
-                                            <thead>
-                                                <tr className="text-neutral-400 border-b border-white/10">
-                                                    <th className="py-2 text-left">ID</th>
-                                                    <th className="py-2 text-left">Source</th>
-                                                    <th className="py-2 text-left">Risk</th>
-                                                    <th className="py-2 text-left">Conf.</th>
-                                                    <th className="py-2 text-left">Latency</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr className="border-b border-white/5">
-                                                    <td className="py-2 text-white">pred-7f3a</td>
-                                                    <td className="text-neutral-300">192.168.1.105</td>
-                                                    <td><span className="text-emerald-400">SAFE</span></td>
-                                                    <td>99.7%</td>
-                                                    <td>7ms</td>
-                                                </tr>
-                                                <tr className="border-b border-white/5">
-                                                    <td className="py-2 text-white">pred-8b4d</td>
-                                                    <td className="text-neutral-300">10.0.0.7</td>
-                                                    <td><span className="text-amber-400">HIGH</span></td>
-                                                    <td>89.0%</td>
-                                                    <td>14ms</td>
-                                                </tr>
-                                                <tr>
-                                                    <td className="py-2 text-white">pred-9c5f</td>
-                                                    <td className="text-neutral-300">172.16.0.45</td>
-                                                    <td><span className="text-emerald-400">SAFE</span></td>
-                                                    <td>99.2%</td>
-                                                    <td>6ms</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Threats Detected</div>
+                                <div className="text-2xl font-bold text-red-400">{liveThreats.toLocaleString()}</div>
+                                <div className="text-xs text-emerald-400">-8.1%</div>
                             </div>
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Model Accuracy</div>
+                                <div className="text-2xl font-bold text-emerald-400">{liveAccuracy.toFixed(1)}%</div>
+                                <div className="text-xs text-neutral-400">F1: 0.994</div>
+                            </div>
+                            <div className="bg-white/5 rounded-xl p-4">
+                                <div className="text-[10px] text-neutral-400 uppercase">Avg Latency</div>
+                                <div className="text-2xl font-bold text-white">{liveLatency.toFixed(1)}ms</div>
+                                <div className="text-xs text-neutral-400">p99: 18ms</div>
+                            </div>
+                        </div>
+                        {/* Mini chart */}
+                        <div className="h-48 w-full bg-white/5 rounded-xl p-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={areaData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                                    <XAxis dataKey="time" stroke="#9CA3AF" fontSize={10} />
+                                    <YAxis stroke="#9CA3AF" fontSize={10} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                                    <Area type="monotone" dataKey="traffic" stroke="#2563EB" fill="#2563EB" fillOpacity={0.2} />
+                                    <Area type="monotone" dataKey="threats" stroke="#EF4444" fill="#EF4444" fillOpacity={0.15} />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* ---- ML Pipeline ---- */}
+            {/* ---- ML Pipeline (simplified) ---- */}
             <section className="py-24 bg-white/5">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <SectionTitle>ML Pipeline</SectionTitle>
@@ -831,13 +620,13 @@ export const LandingPage: React.FC = () => {
                         <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/40 to-primary/10" />
                         <div className="space-y-8 pl-12">
                             {[
-                                { label: 'Dataset (CIC‑IDS2017)', icon: Database },
-                                { label: 'Data Cleaning', icon: CheckCircle },
-                                { label: 'EDA', icon: BarChart3 },
-                                { label: 'Feature Engineering', icon: Cpu },
-                                { label: 'Training (Scikit‑Learn)', icon: Activity },
-                                { label: 'Evaluation', icon: ShieldCheck },
-                                { label: 'Deployment (FastAPI)', icon: Server },
+                                'Dataset (CIC‑IDS2017)',
+                                'Data Cleaning',
+                                'EDA',
+                                'Feature Engineering',
+                                'Training (Scikit‑Learn)',
+                                'Evaluation',
+                                'Deployment (FastAPI)',
                             ].map((step, index) => (
                                 <motion.div
                                     key={index}
@@ -852,8 +641,8 @@ export const LandingPage: React.FC = () => {
                                     </div>
                                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-6 py-4 flex-1 hover:border-primary/40 transition-colors">
                                         <div className="flex items-center gap-3">
-                                            <step.icon className="w-5 h-5 text-primary" />
-                                            <span className="text-sm font-medium text-white">{step.label}</span>
+                                            <Shield className="w-5 h-5 text-primary" />
+                                            <span className="text-sm font-medium text-white">{step}</span>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -908,8 +697,8 @@ export const LandingPage: React.FC = () => {
                         Built on a robust dataset and evaluated for enterprise deployment.
                     </SectionSubtitle>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <StatCounter value={79} label="Features" icon={<Database className="w-6 h-6" />} />
-                        <StatCounter value={610492} label="Records" suffix="+" icon={<Activity className="w-6 h-6" />} />
+                        <StatCounter value={79} label="Features" icon={<Shield className="w-6 h-6" />} />
+                        <StatCounter value={610492} label="Records" suffix="+" icon={<Shield className="w-6 h-6" />} />
                         <StatCounter value={15} label="Attack Categories" suffix="+" icon={<Shield className="w-6 h-6" />} />
                         <StatCounter value={98} label="Accuracy" suffix="%" icon={<Award className="w-6 h-6" />} />
                     </div>
