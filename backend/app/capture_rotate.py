@@ -16,9 +16,12 @@ USAGE:
 import subprocess
 import os
 
-TSHARK_PATH = r"D:\AI-NIDS\wireshark\tshark.exe"
-INTERFACE = r"\Device\NPF_{1A486543-8E5F-4B0E-B9D7-6EDA5970F2DC}"   # Wi-Fi (stable device path, not numbered index)
-CAPTURE_DIR = r"D:\AI-NIDS\pcap_capture"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+TSHARK_PATH = r"C:\Program Files\Wireshark\tshark.exe"
+INTERFACE = r"\Device\NPF_{27E7153A-017C-473F-896A-C94AE6B8FAB2}"  # Wi-Fi (stable device path, not numbered index)
+CAPTURE_DIR = os.path.join(PROJECT_ROOT, "pcap_capture")
+
 ROTATE_SECONDS = 30                 # new file every 30s -- lower = more real-time, more CPU/disk churn
 RING_BUFFER_FILES = 20              # keep only the most recent N files (auto-deletes older ones)
 

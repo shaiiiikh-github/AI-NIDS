@@ -39,17 +39,24 @@ import pandas as pd
 import lightgbm as lgb
 from datetime import datetime
 
+from db import FlowLog, SessionLocal, init_db, DB_PATH
+
 # ---------------------------------------------------------------------------
 # CONFIG - edit these
 # ---------------------------------------------------------------------------
-CICFLOWMETER_OUTPUT_DIR = r"D:/AI-NIDS/live_capture"   # <-- EDIT: CICFlowMeter's live output folder
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+CICFLOWMETER_OUTPUT_DIR = os.path.join(PROJECT_ROOT, "live_capture")
 
-MAIN_MODEL_PATH = "D:/AI-NIDS/models/cicids2017_lightgbm.txt"
-MAIN_LABEL_MAP_PATH = "D:/AI-NIDS/models/label_mapping.json"
-SUB_MODEL_PATH = "D:/AI-NIDS/models/webattack_submodel.txt"
-SUB_LABEL_MAP_PATH = "D:/AI-NIDS/models/webattack_label_mapping.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+MODELS_DIR = os.path.join(PROJECT_ROOT, "models")
 
-ALERT_LOG_PATH = "D:/AI-NIDS/logs/alerts.log"
+MAIN_MODEL_PATH = os.path.join(MODELS_DIR, "cicids2017_lightgbm.txt")
+MAIN_LABEL_MAP_PATH = os.path.join(MODELS_DIR, "label_mapping.json")
+SUB_MODEL_PATH = os.path.join(MODELS_DIR, "webattack_submodel.txt")
+SUB_LABEL_MAP_PATH = os.path.join(MODELS_DIR, "webattack_label_mapping.json")
+
 POLL_INTERVAL_SECONDS = 2
 UNCERTAINTY_MARGIN = 0.15
 BENIGN_LABEL = "Benign"
@@ -274,9 +281,20 @@ class HierarchicalIDS:
         main_conf = main_probs[np.arange(len(main_pred_idx)), main_pred_idx]
         main_pred_labels = [self._lookup(self.main_labels, i) for i in main_pred_idx]
 
+        # raw_features: the exact 77-value vector fed to the main model, keyed
+        # by trained feature name -> value. Stored as-is in FlowLog.raw_features
+        # (Tier 2 JSON blob) so the frontend can show a drill-down without
+        # re-deriving anything. Captured here (not recomputed in main()) since
+        # X_main is already the aligned/cleaned vector.
         results = [
-            {"label": lbl, "confidence": float(c), "uncertain": False, "alternative": None}
-            for lbl, c in zip(main_pred_labels, main_conf)
+            {
+                "label": lbl,
+                "confidence": float(c),
+                "uncertain": False,
+                "alternative": None,
+                "raw_features": X_main.iloc[i].to_dict(),
+            }
+            for i, (lbl, c) in enumerate(zip(main_pred_labels, main_conf))
         ]
 
         web_mask = [lbl in WEB_ATTACK_CLASSES for lbl in main_pred_labels]
@@ -297,15 +315,54 @@ class HierarchicalIDS:
                 top2_label = self._lookup(self.sub_labels, top2_idx)
                 uncertain = (top1_p - top2_p) < UNCERTAINTY_MARGIN
 
-                results[i] = {
-                    "label": top1_label,
-                    "confidence": float(top1_p),
-                    "uncertain": uncertain,
-                    "alternative": top2_label if uncertain else None,
-                }
+                # Update label/confidence/uncertain/alternative only --
+                # raw_features (main model's 77-feature vector) stays as-is,
+                # since that's the canonical feature set for this flow.
+                results[i]["label"] = top1_label
+                results[i]["confidence"] = float(top1_p)
+                results[i]["uncertain"] = uncertain
+                results[i]["alternative"] = top2_label if uncertain else None
                 j += 1
 
         return results
+
+
+def _to_int(v, default=0):
+    try:
+        return int(float(v))
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_float(v, default=0.0):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return default
+
+
+def row_to_flowlog(row, result, response_time_ms=0.0):
+    """Builds a FlowLog row from one cicflowmeter CSV row + its prediction
+    result. Every flow gets a row (not just alerts) -- is_alert distinguishes
+    them so the frontend can filter to alerts-only when wanted."""
+    label = result["label"]
+    return FlowLog(
+        timestamp=datetime.now(),
+        src_ip=str(row.get("src_ip", "?")),
+        src_port=_to_int(row.get("src_port")),
+        dst_ip=str(row.get("dst_ip", "?")),
+        dst_port=_to_int(row.get("dst_port")),
+        protocol=str(row.get("protocol", "?")),
+        flow_duration=_to_float(row.get("flow_duration")),
+        tot_fwd_pkts=_to_int(row.get("tot_fwd_pkts")),
+        tot_bwd_pkts=_to_int(row.get("tot_bwd_pkts")),
+        label=label,
+        confidence=result["confidence"],
+        uncertain=result["uncertain"],
+        alternative=result["alternative"],
+        is_alert=(label != BENIGN_LABEL),response_time_ms=response_time_ms,
+        raw_features=result["raw_features"],
+    )
 
 
 def format_alert(row, result):
@@ -324,13 +381,15 @@ def format_alert(row, result):
 
 
 def main():
-    os.makedirs(os.path.dirname(ALERT_LOG_PATH), exist_ok=True)
+    init_db()   # no-op if flow_logs table already exists
+    db = SessionLocal()
+
     ids = HierarchicalIDS()
     watcher = FolderTail(CICFLOWMETER_OUTPUT_DIR)
 
     print(f"\nWatching {CICFLOWMETER_OUTPUT_DIR} for new flows "
           f"(polling every {POLL_INTERVAL_SECONDS}s)...")
-    print(f"Alerts will be logged to {ALERT_LOG_PATH}\n")
+    print(f"Every flow (not just alerts) is logged to {DB_PATH}\n")
 
     total_flows = 0
     total_alerts = 0
@@ -338,7 +397,7 @@ def main():
     last_heartbeat = time.time()
     HEARTBEAT_SECONDS = 15
 
-    with open(ALERT_LOG_PATH, "a", buffering=1) as log_file:
+    try:
         while True:
             new_data = watcher.poll()
             for path, df in new_data.items():
@@ -347,16 +406,26 @@ def main():
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] "
                       f"Read {len(df)} new flow(s) from {os.path.basename(path)}")
 
+                t0 = time.perf_counter()
                 results = ids.predict_batch(df)
+                per_flow_ms = ((time.perf_counter() - t0) * 1000) / max(len(df), 1)
+
+                flow_rows = []
                 for (_, row), result in zip(df.iterrows(), results):
                     total_flows += 1
                     label_counts[result["label"]] = label_counts.get(result["label"], 0) + 1
-                    if result["label"] == BENIGN_LABEL:
-                        continue
-                    total_alerts += 1
-                    alert = format_alert(row, result)
-                    print(alert)
-                    log_file.write(alert + "\n")
+
+                    # Every flow gets persisted (this is the actual fix --
+                    # previously only non-Benign rows were written anywhere).
+                    flow_rows.append(row_to_flowlog(row, result))
+
+                    if result["label"] != BENIGN_LABEL:
+                        total_alerts += 1
+                        print(format_alert(row, result))
+
+                if flow_rows:
+                    db.add_all(flow_rows)
+                    db.commit()
 
             # Periodic status line so silence can be told apart from "stuck"
             if time.time() - last_heartbeat > HEARTBEAT_SECONDS:
@@ -367,6 +436,8 @@ def main():
                 last_heartbeat = time.time()
 
             time.sleep(POLL_INTERVAL_SECONDS)
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":
